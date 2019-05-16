@@ -53,8 +53,7 @@ classdef WaveletTransform
             v_wind_reconstructed = constant_coef*sum(windowed_v_wavelet ./ sqrt(windowed_scales)');
             v_wind_inverted = real(v_wind_reconstructed);
             u_wind_inverted = real(u_wind_reconstructed);
-            v_wind_hilbert_transformed = complex(v_wind_reconstructed);
-            
+            v_wind_hilbert_transformed = complex(v_wind_reconstructed);            
         end
         
         function [a, b, c, d] = clipWindowedTransformToValue(obj, windowedWaveletTransform, localMaxRow, localMaxCol)

@@ -9,7 +9,14 @@ D = mean(u.^2) - mean(v.^2);
 P = 2*(mean(u.*v));
 Q = 2*mean(u.*vWavePacketHilbertTransformed);
 degreeOfPolarization = sqrt((P^2 + Q^2 + D^2)) / I;
-theta = 0.5 * atan(P / D);
-axialRatio = cot(0.5*asin(Q/(degreeOfPolarization*I)));
+if Q < 0.05 || P < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
+   theta = 0;
+   axialRatio = 0;
+   degreeOfPolarization = 0;
+   return;
+else
+    theta = 0.5 * atan(P / D);
+    axialRatio = cot(0.5*asin(Q/(degreeOfPolarization*I)));
+end
 end
 
