@@ -109,7 +109,7 @@ if (dj == -1), dj = 1./4.;, end
 if (J1 == -1), J1=fix((log(n1*dt/s0)/log(2))/dj);, end
 if (mother == -1), mother = 'MORLET';, end
 %....construct time series to analyze, pad if necessary
-x(1:n1) = Y - mean(Y);
+x(1:n1) = Y; %- mean(Y);
 if (pad == 1)
 	base2 = fix(log(n1)/log(2) + 0.4999);   % power of 2 nearest to N
 	x = [x,zeros(1,2^(base2+1)-n1)];
