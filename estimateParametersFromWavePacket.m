@@ -10,6 +10,7 @@ P = 2*(mean(u.*v));
 Q = 2*mean(u.*vWavePacketHilbertTransformed);
 degreeOfPolarization = sqrt((P^2 + Q^2 + D^2)) / I;
 if Q < 0.05 || P < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
+%if degreeOfPolarization < 0.5 || degreeOfPolarization > 1
    theta = 0;
    axialRatio = 0;
    degreeOfPolarization = 0;

@@ -14,9 +14,10 @@ classdef WaveletTransform
         u_wind_component;
         v_wind_component;
         power_surface;
-        u_wavelet;
-        v_wavelet;
+        uWavelet;
+        vWavelet;
         waveletScales;
+        fourierPeriod;
         coi;
     end
     
@@ -32,29 +33,35 @@ classdef WaveletTransform
             obj.s0 = s0;
             obj.dj = dj;
             obj.dt = dt;
-            
-            [obj.u_wavelet, ~, obj.waveletScales, ~] = wavelet(u_wind_component, dt, pad, dj, s0); % wave, period, scale, COI
-            [obj.v_wavelet, ~, ~, obj.coi] = wavelet(v_wind_component, dt, pad, dj, s0);
-            obj.power_surface = abs(obj.u_wavelet).^2 + abs(obj.v_wavelet).^2;
+            [obj.uWavelet, ~, obj.waveletScales, ~] = wavelet(u_wind_component, dt, pad, dj, s0); % wave, period, scale, COI
+            [obj.vWavelet, ~, ~, obj.coi] = wavelet(v_wind_component, dt, pad, dj, s0);
+            obj.power_surface = abs(obj.uWavelet).^2 + abs(obj.vWavelet).^2;
+            obj.fourierPeriod = 1.03 * obj.waveletScales;
         end
         
         function [u_wind_inverted, v_wind_inverted, v_wind_hilbert_transformed] = invertWindowedTransform(obj, windowedWaveletTransform)
-            %METHOD1 Summary of this method goes here
-            %   Detailed explanation goes here
             scale_index_1 = windowedWaveletTransform.scale_index_1;
             scale_index_2 = windowedWaveletTransform.scale_index_2;
             alt_index_1 = windowedWaveletTransform.alt_index_1;
             alt_index_2 = windowedWaveletTransform.alt_index_2;
             constant_coef = obj.dj * sqrt(obj.dt) / (0.776*pi^(-1/4)); % Magic from T&C.
             windowed_scales = obj.waveletScales(scale_index_1:scale_index_2);
-            windowed_u_wavelet = obj.u_wavelet(scale_index_1:scale_index_2, alt_index_1:alt_index_2);
-            u_wind_reconstructed = constant_coef*sum(windowed_u_wavelet ./ sqrt(windowed_scales)');
-            windowed_v_wavelet = obj.v_wavelet(scale_index_1:scale_index_2, alt_index_1:alt_index_2);
-            v_wind_reconstructed = constant_coef*sum(windowed_v_wavelet ./ sqrt(windowed_scales)');
+            windowed_u_wavelet = obj.uWavelet(scale_index_1:scale_index_2, alt_index_1:alt_index_2);
+            u_wind_reconstructed = constant_coef*sum(windowed_u_wavelet ./ sqrt(windowed_scales)', 1);
+            windowed_v_wavelet = obj.vWavelet(scale_index_1:scale_index_2, alt_index_1:alt_index_2);
+            v_wind_reconstructed = constant_coef*sum(windowed_v_wavelet ./ sqrt(windowed_scales)', 1);
             v_wind_inverted = real(v_wind_reconstructed);
             u_wind_inverted = real(u_wind_reconstructed);
             v_wind_hilbert_transformed = complex(v_wind_reconstructed);            
         end
+        
+        function [uWindInverted, vWindInverted] = invertWaveletTransform(obj)
+           constantCoef = obj.dj * sqrt(obj.dt) / (0.776*pi^(1/4)); % Magic from T&C.
+           uWindInverted = constantCoef*sum(real(obj.uWavelet) ./ sqrt(obj.waveletScales)', 1); % sum over scales
+           vWindInverted = constantCoef*sum(real(obj.vWavelet) ./ sqrt(obj.waveletScales)', 1); 
+           
+        end
+        
         
         function [a, b, c, d] = clipWindowedTransformToValue(obj, windowedWaveletTransform, localMaxRow, localMaxCol)
             % clipWindowedTransformToValue either clips the windowed
