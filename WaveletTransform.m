@@ -26,7 +26,7 @@ classdef WaveletTransform
             %UNTITLED3 Construct an instance of this class
             %   Detailed explanation goes here
             pad = 1;
-            dj = 0.01;
+            dj = 0.05;
             s0 = 2*dt;
             obj.u_wind_component = u_wind_component;
             obj.v_wind_component = v_wind_component;
@@ -44,15 +44,19 @@ classdef WaveletTransform
             scale_index_2 = windowedWaveletTransform.scale_index_2;
             alt_index_1 = windowedWaveletTransform.alt_index_1;
             alt_index_2 = windowedWaveletTransform.alt_index_2;
-            constant_coef = obj.dj * sqrt(obj.dt) / (0.776*pi^(-1/4)); % Magic from T&C.
+            constant_coef = obj.dj * sqrt(obj.dt) / (0.776*pi^(1/4)); % Magic from T&C.
             windowed_scales = obj.waveletScales(scale_index_1:scale_index_2);
-            windowed_u_wavelet = obj.uWavelet(scale_index_1:scale_index_2, alt_index_1:alt_index_2);
+            windowed_u_wavelet = obj.uWavelet(scale_index_1:scale_index_2, :);
             u_wind_reconstructed = constant_coef*sum(windowed_u_wavelet ./ sqrt(windowed_scales)', 1);
-            windowed_v_wavelet = obj.vWavelet(scale_index_1:scale_index_2, alt_index_1:alt_index_2);
+            windowed_v_wavelet = obj.vWavelet(scale_index_1:scale_index_2, :);
             v_wind_reconstructed = constant_coef*sum(windowed_v_wavelet ./ sqrt(windowed_scales)', 1);
             v_wind_inverted = real(v_wind_reconstructed);
             u_wind_inverted = real(u_wind_reconstructed);
-            v_wind_hilbert_transformed = complex(v_wind_reconstructed);            
+            v_wind_hilbert_transformed = imag(v_wind_reconstructed);   
+            yy = linspace(0, 25000, size(u_wind_reconstructed, 2));
+            plot(real(u_wind_reconstructed), yy)
+            hold on;
+            plot(real(v_wind_reconstructed), yy, 'b')
         end
         
         function [uWindInverted, vWindInverted] = invertWaveletTransform(obj)
@@ -104,10 +108,7 @@ classdef WaveletTransform
             [c, d] = findMinimaClosestToIndex(abs(row-thresholdValue), localMaxCol);
 
         end
-        
-        
-        
-        
+
     end
 end
 
