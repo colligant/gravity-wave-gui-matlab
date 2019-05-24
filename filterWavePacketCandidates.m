@@ -12,15 +12,15 @@ for i=1:size(localMaximaRows, 1)
     % first, clip the local maxima to 1/4Smax.
     currentMaxRow = localMaximaRows(i);
     currentMaxCol = localMaximaCols(i);
-    windowedWaveletTransform = extractWindowAroundLocalMax(waveletTransform.power_surface, currentMaxCol, currentMaxRow);
-    [row_index_1, row_index_2, col_index_1, col_index_2] = waveletTransform.clipWindowedTransformToValue(windowedWaveletTransform, currentMaxRow, currentMaxCol);
+    %windowedWaveletTransform = extractWindowAroundLocalMax(waveletTransform.powerSurface, currentMaxCol, currentMaxRow);
+    [row_index_1, row_index_2, col_index_1, col_index_2] = waveletTransform.clipWindowedTransformToValue(currentMaxRow, currentMaxCol);
     if row_index_1 == 0 || row_index_2 == 0 || col_index_1 == 0 || col_index_2 == 0
        %fprintf("Maxima too close to power surface edge. Most likely noise anyway.\n");
        continue;
     end
     oneQuarterMaxWindow = WindowedWaveletTransform(row_index_1, row_index_2, col_index_1, col_index_2);
-    [uInverted, vInverted, vHilbertTransformed] = waveletTransform.invertWindowedTransform(oneQuarterMaxWindow);
-    [theta, axialRatio, degreeOfPolarization] = estimateParametersFromWavePacket(uInverted, vInverted, vHilbertTransformed);
+    [u, v, temp, ~] = waveletTransform.invertWindowedTransform(oneQuarterMaxWindow);
+    [theta, axialRatio, degreeOfPolarization] = estimateParametersFromWavePacket(u, v, temp);
     if theta == 0 || axialRatio == 0 || degreeOfPolarization == 0
         %fprintf("Wave packet did not satisfy critera\n");
         continue;
