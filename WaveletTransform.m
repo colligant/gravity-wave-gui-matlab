@@ -54,8 +54,8 @@ classdef WaveletTransform
             windowedTempWavelet = obj.tempWavelet(scale_index_1:scale_index_2, alt_index_1:alt_index_2);
             tempReconstructed = constant_coef*sum(windowedTempWavelet ./ sqrt(windowed_scales)', 1);
             v_wind_reconstructed = constant_coef*sum(windowed_v_wavelet ./ sqrt(windowed_scales)', 1);
-            fruig = obj.fourierPeriod(scale_index_2) + obj.fourierPeriod(scale_index_1);
-            dominantVerticalWavelength = fruig / 2;
+            %dominantVerticalWavelength = (obj.fourierPeriod(scale_index_2) + obj.fourierPeriod(scale_index_1)) / 2;
+            dominantVerticalWavelength = mean(obj.fourierPeriod(scale_index_1:scale_index_2));
         end
         
         function [uWindInverted, vWindInverted] = invertWaveletTransform(obj)
