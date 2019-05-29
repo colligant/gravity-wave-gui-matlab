@@ -11,7 +11,8 @@ D = mean(u.^2) - mean(v.^2);
 P = mean(2*u.*v);
 Q = real(mean(2*u.*vWavePacketHilbertTransformed));
 degreeOfPolarization = sqrt((P^2 + Q^2 + D^2)) / I;
-if (abs(Q) < 0.05 && abs(P) < 0.05) || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
+if abs(Q) < 0.05 || abs(P) < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
+%if Q < 0.05 || P < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
    theta = 0;
    axialRatio = 0;
    degreeOfPolarization = 0;
