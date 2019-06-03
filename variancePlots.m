@@ -48,7 +48,6 @@ for i=1:size(files)
    j = size(u, 2);
    dataBlock(1:j, counter) = u.^2 + v.^2;
    counter = counter + 1;
- 
 end
 contourf(log2(dataBlock))
 

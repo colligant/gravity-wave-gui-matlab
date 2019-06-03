@@ -1,7 +1,7 @@
 function [id1, id2] = findMinimaClosestToIndex(array, index)
 %   Gets the two closest minima on either side of index in array.
 %   Returns the indices into the array of the minima.
-[~, locs] = findpeaks(-array);
+[~, locs] = findpeaks(-array); % find the maxima (the negative minima).
 locs = sort(locs);
 id2 = 0;
 id1 = 0;

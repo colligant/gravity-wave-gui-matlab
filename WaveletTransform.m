@@ -26,19 +26,20 @@ classdef WaveletTransform
         function obj = WaveletTransform(u_wind_component, v_wind_component, temperature, dt)
             %UNTITLED3 Construct an instance of this class
             %   Detailed explanation goes here
-            pad = 1;
-            dj = 0.05;
-            s0 = 2*dt;
+            pad = 1; % Use padding to help with edge effects.
+            dj = 0.005; % Value of dj determines scale resolution of the transform.
+            s0 = 2*dt; % Minimum resolvable scale. dt is just the sampling rate -
+            % either in time or space.
             obj.u_wind_component = u_wind_component;
             obj.v_wind_component = v_wind_component;
             obj.s0 = s0;
             obj.dj = dj;
             obj.dt = dt;
             [obj.uWavelet, ~, obj.waveletScales, ~] = wavelet(u_wind_component, dt, pad, dj, s0); % wave, period, scale, COI
-            [obj.vWavelet, ~, ~, obj.coi] = wavelet(v_wind_component, dt, pad, dj, s0);
+            [obj.vWavelet, ~, ~, obj.coi] = wavelet(v_wind_component, dt, pad, dj, s0); % coi is the same for all transforms of the same data.
             [obj.tempWavelet, ~, ~, ~] = wavelet(temperature, dt, pad, dj, s0);
             obj.powerSurface = abs(obj.uWavelet).^2 + abs(obj.vWavelet).^2;
-            obj.fourierPeriod = 1.03 * obj.waveletScales;
+            obj.fourierPeriod = 1.03 * obj.waveletScales; % magic number from Torrence and Compo.
         end
         
         function [u_wind_reconstructed, v_wind_reconstructed, tempReconstructed, dominantVerticalWavelength] = invertWindowedTransform(obj, windowedWaveletTransform)
@@ -54,7 +55,6 @@ classdef WaveletTransform
             windowedTempWavelet = obj.tempWavelet(scale_index_1:scale_index_2, alt_index_1:alt_index_2);
             tempReconstructed = constant_coef*sum(windowedTempWavelet ./ sqrt(windowed_scales)', 1);
             v_wind_reconstructed = constant_coef*sum(windowed_v_wavelet ./ sqrt(windowed_scales)', 1);
-            %dominantVerticalWavelength = (obj.fourierPeriod(scale_index_2) + obj.fourierPeriod(scale_index_1)) / 2;
             dominantVerticalWavelength = mean(obj.fourierPeriod(scale_index_1:scale_index_2));
         end
         
@@ -68,15 +68,8 @@ classdef WaveletTransform
         
         function [a, b, c, d] = clipWindowedTransformToValue(obj, localMaxRow, localMaxCol)
             % clipWindowedTransformToValue either clips the windowed
-            % transform to ``value'', or clips it to the next inflection
+            % transform to thresholdValue, or clips it to the next inflection
             % point.
-            % localMaxRow, localMaxCol are relative to the first indices
-            % of the windowedTransform. When we want to find the nearest
-            % local minimum, we have to scan the entire power surface. This
-            % means we need the "absolute" indices of the local max - i.e.
-            % add the initial offset (scale_index_1, row_index_1) to the
-            % indices returned by finding the maximum value in the windowed
-            % power surface. 
             maxValue = obj.powerSurface(localMaxRow, localMaxCol);    
             thresholdValue = 0.25*maxValue;
             column = obj.powerSurface(:, localMaxCol); % extract whole column
@@ -85,10 +78,10 @@ classdef WaveletTransform
             % need the locations of the first minima on each side of the
             % local max in both row and column. These locations will define
             % the windowed power surface before we clip it to
-            % valueToClipTo. s
-            
+            % valueToClipTo. 
             % Error checking on zero indices returned.
-            
+            % gets the closest local minima to 'localMaxRow' and
+            % 'localMaxCol' on each side.
             [a, b] = findMinimaClosestToIndex(abs(column-thresholdValue), localMaxRow);
             [c, d] = findMinimaClosestToIndex(abs(row-thresholdValue), localMaxCol);
 
