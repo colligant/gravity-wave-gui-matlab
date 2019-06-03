@@ -1,7 +1,10 @@
-function doAnalysis(f, save, saveDir, show, lowerCutOffAltitude, latitude)
+function doAnalysis(f, save, saveDir, show, lowerCutOffAltitude, upperCutOffAltitude, latitude)
 % does g-wave analysis for a radiosonde sounding.
-if nargin < 6
+if nargin < 7
     latitude = 42.2127;
+end
+if nargin < 6
+    upperCutOffAltitude = 40000; % flights never reach 40km.
 end
 if nargin < 5
     lowerCutOffAltitude = 12000;
@@ -29,19 +32,35 @@ end
 data = readRadioSondeData(f);
 [maxAlt, mai] = max(data.Alt);
 [~, lai] = min(abs(data.Alt(1:mai) - lowerCutOffAltitude)); 
-if maxAlt < lowerCutOffAltitude
+[~, mai] = min(abs(data.Alt(lai:mai) - upperCutOffAltitude));
+mai = mai + lai;
+if maxAlt < lowerCutOffAltitude && upperCutOffAltitude == 40000
     fprintf("Flight %s did not reach %d m\n", f, lowerCutOffAltitude);
     return;
+elseif upperCutOffAltitude ~= 40000 && data.Alt(mai) < (upperCutOffAltitude - 500)
+    fprintf("Flight %s did not reach %d m\n", f, upperCutOffAltitude);
+    return
+elseif mai == lai + 1
+    return
 end
+
+% Prepare data 
 ws = data.Ws(lai:mai);
+ws = ws(~isnan(ws));
 wd = data.Wd(lai:mai);
+wd = wd(~isnan(wd));
 pressure = data.P(lai:mai);
+pressure = pressure(~isnan(pressure));
 alt = data.Alt(lai:mai);
-temp = data.T(lai:mai) + 273.15; % temperature in K
+alt = alt(~isnan(alt));
+temp = data.T(lai:mai) + 273.15;
+temp = temp(~isnan(temp));
 time = data.Time(lai:mai);
+time = time(~isnan(time));
 potentialTemperature = (1000.0^0.286)*temp./(pressure.^0.286); % from Jaxen
 u = ws.*cosd(wd);
 v = ws.*sind(wd);
+
 
 % remove background winds with a cubic polynomial.
 u = fitAndRemovePolynomial(time, u);
@@ -68,14 +87,16 @@ wt = WaveletTransform(u, v, temp, heightSamplingFrequency);
 if show
     figure()
     contourf(alt, wt.fourierPeriod, wt.powerSurface);
+    [~, titleName, ~] = fileparts(f);
     set(gca,'YScale', 'log')
-    title(f);
+    titleString = sprintf("%s", titleName);
+    title(titleString, 'Interpreter', 'none');
     hold on;
     plot(alt, wt.coi, 'k')
     ylim([wt.s0 Inf])
 end
 
-
+gWaveDetected = false;
 for i=1:size(rows)
      % clip the wavelet transform to a box (s1, s2, a1, a2) that 
      % corresponds to where the power surface equals 1/4Smax
@@ -120,6 +141,7 @@ for i=1:size(rows)
          % gravity wave is not physical, so skip it.
          continue
      end
+     gWaveDetected = true;
      if save
          % finally, save the data.
          header = {'altOfDetection_km', 'vert_wavelength_km', 'horiz_wavelength_km', 'propagation_dir', 'axial_ratio', 'int_vert_group vel_ms)', 'int_horiz_group_vel_ms', 'int_vert_phase_spd_ms', 'int_horiz_phase_spd_ms)', 'degreeofpolarization', 'stokes_param_Q'};
@@ -138,8 +160,8 @@ for i=1:size(rows)
      end
      fprintf("Alt: %f, L_z: %f, L_h: %f, Theta: %f, w/f: %f, period (hours): %f, Vert. group vel: %f, Horiz. group vel: %f, Vert. phase spd: %f, Horiz. phase spd: %f\n", altitudeOfDetection/1000, lambda_z/1000, lambda_h/1000, rad2deg(theta), axialRatio, (2*pi/intrinsicFreq)/3600, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed);
 end
-%if show
- %   uiwait()
-%end
+if ~gWaveDetected
+    fprintf("No gravity waves detected.\n");
+end
 end
 

@@ -12,7 +12,8 @@ Q = real(mean(2*u.*vWavePacketHilbertTransformed));
 degreeOfPolarization = sqrt((P^2 + Q^2 + D^2)) / I;
 % perform filtering based on Stokes parameters and degree of polarization.
 if abs(Q) < 0.05 || abs(P) < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
-   theta = 0;
+%if Q < 0.05 || P < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
+    theta = 0;
    axialRatio = 0;
    degreeOfPolarization = 0;
    Q = 0;
@@ -27,7 +28,9 @@ else
     ur = rotated(1, :);
     vr = rotated(2, :);
     % only care about magnitude of the axial ratio
-    axialRatio = abs(mean(ur) / mean(vr));
+    axialRatio = abs(mean(ur) / mean(vr)); % ...
+    axialRatio = abs(cot(0.5*asin(Q/(degreeOfPolarization*I)))); % ... 
+    %fprintf("AR: %f, ar: %f, diff: %f\n", AR, axialRatio, AR - axialRatio);
     uWavevWave = [uWavePacket; vWavePacket]; % zink 2000 eqn 3.17.
     % rotate complex reconstructed wave packets and use to calculate
     % the phase of the coherence function. This needs to be investigated.
