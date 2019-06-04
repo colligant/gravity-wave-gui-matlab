@@ -13,21 +13,4 @@ for i=1:size(files)
         data = [data; readGravityWaveData(current)];
     end
 end
-%data.Properties.VariableNames
-%histogram(data.axial_ratio, 5)
-%size(data)
-%mean(data.horiz_wavelength_km)
-figure
-subplot(2, 2, 2)
-polarhistogram(data.propagation_dir, 5);
-thetaticks([])
-title("Propagation directions, n=23")
-subplot(2, 2, 1)
-histogram(data.axial_ratio, 5)
-title("Horiz. group velocity, n=23")
-xlabel("group velocity, (m/s)")
-subplot(2, 2, [3, 4])
-histogram(data., 5)
-title("Horiz. phase speed, n=23")
-xlabel("phase speed, (m/s)")
-%saveas(gcf, "/Users/thomascolligan/Desktop/analysis.png")
+scatter(data.horiz_wavelength_km, data.vert_wavelength_km);
