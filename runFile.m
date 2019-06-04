@@ -1,10 +1,12 @@
-data_dir = 'eclipseData/';
+%data_dir = 'eclipseData/';
+warning('off', 'all');
+data_dir = '/Users/thomascolligan/Box/Eclipse 2019/Practice_Flight_Data';
 t = fullfile(data_dir, "*.txt");
 files = dir(t);
 saveDirectory = 'gravityWaveData';
-show = true;
+show = false;
 save = false;
-lowerCutOffAltitude = 12000;
+lowerCutOffAltitude = 9000;
 upperCutOffAltitude = 40000;
 for i=1:size(files)
     current = files(i).name;
