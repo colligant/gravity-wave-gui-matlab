@@ -80,7 +80,7 @@ classdef WaveletTransform
             % transform to thresholdValue, or clips it to the next point
             % where the surface starts rising again.
             maxValue = obj.powerSurface(localMaxRow, localMaxCol);    
-            thresholdValue = 0.25*maxValue;
+            thresholdValue = 0.75*maxValue;
             column = obj.powerSurface(:, localMaxCol); % extract whole column
             row = obj.powerSurface(localMaxRow, :); % extract whole row
             % need the locations of the first minima on each side of the

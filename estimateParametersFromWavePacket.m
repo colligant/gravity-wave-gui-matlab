@@ -8,7 +8,7 @@ vWavePacketHilbertTransformed = imag(vWavePacket);
 I = mean(u.^2) + mean(v.^2);
 D = mean(u.^2) - mean(v.^2);
 P = mean(2*u.*v);
-Q = real(mean(2*u.*vWavePacketHilbertTransformed));
+Q = mean(2*u.*vWavePacketHilbertTransformed);
 degreeOfPolarization = sqrt((P^2 + Q^2 + D^2)) / I;
 % perform filtering based on Stokes parameters and degree of polarization.
 if abs(Q) < 0.05 || abs(P) < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
@@ -20,7 +20,8 @@ if abs(Q) < 0.05 || abs(P) < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolar
 else
     theta = 0.5 * atan(P / D); % Zink, 2000 eqn 3.14    
     % Axial ratio
-    axialRatio = abs(cot(0.5*asin(Q/(degreeOfPolarization*I)))); %Murphy et al (2014), Koushik et al (2019), and Vincent (1989) 
+    axialRatio = abs(cot(0.5*asin(Q/(degreeOfPolarization*I)))); 
+    % Murphy et al (2014), Koushik et al (2019), and Vincent (1989) 
     % Look at phase b/t u' and T+90'
     % From the polarization relations, we know that u' and T' are +-90 deg
     % out of phase, depending on the sign of the horizontal wavenumber. The 

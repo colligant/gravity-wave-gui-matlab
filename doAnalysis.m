@@ -77,15 +77,22 @@ alt = averageToAltitudeResolution(alt, alt, heightSamplingFrequency);
 
 % calculate constant values to use in analysis
 bvFreqSquared = bruntVaisalaFrequency(potentialTemperature, heightSamplingFrequency); % returns the squared BV frequency.
+if size(bvFreqSquared(bvFreqSquared < 0))
+    altIndices = bvFreqSquared < 0;
+    alts = alt(altIndices);
+    disp(alts);
+    plot(bvFreqSquared(altIndices))
+    uiwait()
+end
+
 coriolisFreq = coriolisFrequency(latitude);
 
 % finally, do the wavelet transform.
 wt = WaveletTransform(u, v, temp, heightSamplingFrequency);
-
 % get local maxima that (could) correspond to gravity wave packets
 % "Peaks were identified as a function of scale and altitude" - MAL2014.
 [rows, cols] = find(imregionalmax(wt.powerSurface, 8));
-%
+%[rows, cols] = filterLocalMaxOutsideOfCOI(wt.coi, wt.fourierWavelength, rows, cols);
 if show
     figure()
     contourf(alt, wt.fourierWavelength, wt.powerSurface);
@@ -97,7 +104,6 @@ if show
     plot(alt, wt.coi, 'k')
     ylim([wt.s0 Inf])
 end
-
 gWaveDetected = false;
 for i=1:size(rows)
      % clip the wavelet transform to a box (s1, s2, a1, a2) that 
@@ -130,6 +136,13 @@ for i=1:size(rows)
      %   over Davis, Antartica", table 2.
      intrinsicFreq = coriolisFreq*axialRatio; 
      bvMean = mean(bvFreqSquared(a1:a2)); % Get the mean squared Brunt-Vaisala frequency over the height range of the gravity wave packet
+     if ~((sqrt(bvMean) > intrinsicFreq) && (intrinsicFreq > coriolisFreq))
+         % if the intrinsic frequency is greater than the buoyancy
+         % frequency or if it's less than the coriolis frequency, the
+         % gravity wave is not physical, so skip it.
+         continue
+     end
+     gWaveDetected = true;
      m = 2*pi / lambda_z; % vertical wavenumber (1 / meters)
      k_h = sqrt(((coriolisFreq^2*m^2)/(bvMean))*(intrinsicFreq^2/coriolisFreq^2 - 1)); % horizontal wavenumber (1 / meters)
      intrinsicVerticalGroupVel = -(1 / (intrinsicFreq*m))*(intrinsicFreq^2 - coriolisFreq^2); % m/s
@@ -142,13 +155,6 @@ for i=1:size(rows)
      intrinsicHorizGroupVel = sqrt(intrinsicZonalGroupVel^2 + intrinsicMeridionalGroupVel^2); % m/s
      lambda_h = 2*pi / k_h; % horizontal wavelength (m)
      altitudeOfDetection = mean(alt(a1:a2)); % mean of the altitude range as the central altitude of the gravity wave.
-     if ~((sqrt(bvMean) > intrinsicFreq) && (intrinsicFreq > coriolisFreq))
-         % if the intrinsic frequency is greater than the buoyancy
-         % frequency or if it's less than the coriolis frequency, the
-         % gravity wave is not physical, so skip it.
-         continue
-     end
-     gWaveDetected = true;
      if save
          % finally, save the data.
          header = {'altOfDetection_km', 'vert_wavelength_km', 'horiz_wavelength_km', 'propagation_dir', 'axial_ratio', 'int_vert_group vel_ms)', 'int_horiz_group_vel_ms', 'int_vert_phase_spd_ms', 'int_horiz_phase_spd_ms)', 'degreeofpolarization', 'stokes_param_Q'};

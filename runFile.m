@@ -1,14 +1,14 @@
-warning('off', 'all');
+warning('on', 'all');
 data_dir = 'eclipseData/';
-%data_dir = '/Users/thomascolligan/Box/Eclipse 2019/Practice_Flight_Data';
+% data_dir = '/Users/thomascolligan/box/Eclipse 2019/Practice_Flight_Data/Profile';
 t = fullfile(data_dir, "*.txt");
 files = dir(t);
-saveDirectory = 'gravityWaveData';
+saveDirectory = 'gravityWaveData/';
 show = false;
-save = true;
-lowerCutOffAltitude = 9000;
+save = false;
+lowerCutOffAltitude = 14000;
 upperCutOffAltitude = 40000;
-latitude = 46.8605;
+latitude = 46.89;
 for i=1:size(files)
     current = files(i).name;
     fprintf("Current file: %s\n", current);
@@ -18,7 +18,8 @@ for i=1:size(files)
         continue;
     end
     try
-        doAnalysis(current, save, saveDirectory, show, lowerCutOffAltitude, upperCutOffAltitude, latitude);
+        doAnalysis(current, save, saveDirectory, show, lowerCutOffAltitude, upperCutOffAltitude);
+        pause()
     catch e
         if (strcmp(e.identifier, 'MATLAB:table:UnrecognizedVarName'))
             fprintf("----------------------------\n");

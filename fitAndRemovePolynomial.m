@@ -8,5 +8,10 @@ end
 p = polyfit(time, data, order);
 meanFlow = polyval(p, time);
 perturbationQuantity = data - meanFlow;
+plot(meanFlow, 'r')
+hold on;
+plot(data)
+uiwait();
+
 end
 
