@@ -11,6 +11,11 @@ P = mean(2*u.*v);
 Q = mean(2*u.*vWavePacketHilbertTransformed);
 degreeOfPolarization = sqrt((P^2 + Q^2 + D^2)) / I;
 % perform filtering based on Stokes parameters and degree of polarization.
+% TODO test DOP threshold values and examine 'depolarization' in Murphy et
+% al
+if degreeOfPolarization > 1
+    fprintf("Degree of polarization > 1\n");
+end
 if abs(Q) < 0.05 || abs(P) < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
    theta = 0;
    axialRatio = 0;
@@ -18,10 +23,10 @@ if abs(Q) < 0.05 || abs(P) < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolar
    Q = 0;
    return;
 else
-    theta = 0.5 * atan(P / D); % Zink, 2000 eqn 3.14    
+    theta = 0.5 * atan2(P, D); % Zink, 2000 eqn 3.14 TODO investigate atan2
     % Axial ratio
-    axialRatio = abs(cot(0.5*asin(Q/(degreeOfPolarization*I)))); 
-    % Murphy et al (2014), Koushik et al (2019), and Vincent (1989) 
+    axialRatio = abs(cot(0.5*asin(Q/(degreeOfPolarization*I))));
+    % Murphy et al (2014), Koushik et al (2019), and Vincent (1989)
     % Look at phase b/t u' and T+90'
     % From the polarization relations, we know that u' and T' are +-90 deg
     % out of phase, depending on the sign of the horizontal wavenumber. The 
@@ -40,6 +45,7 @@ else
         % i.e. if the intrinsic frequency is less than the coriolis
         % frequency. This does not agree with theory, so the wave packet 
         % is discarded.
+        % Assing NaN to unphysical values?
         theta = 0;
         axialRatio = 0;
         degreeOfPolarization = 0;

@@ -1,17 +1,12 @@
 function [perturbationQuantity] = fitAndRemovePolynomial(time, data, order)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
-
+%   look at varargin
 if nargin < 3
     order = 3;
 end
-p = polyfit(time, data, order);
+[p] = polyfit(time, data, order);
 meanFlow = polyval(p, time);
 perturbationQuantity = data - meanFlow;
-plot(meanFlow, 'r')
-hold on;
-plot(data)
-uiwait();
-
 end
 

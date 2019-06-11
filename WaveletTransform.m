@@ -42,7 +42,7 @@ classdef WaveletTransform
             obj.fourierWavelength = 1.03 * obj.waveletScales; % magic number from Torrence and Compo.
         end
         
-        function [u_wind_reconstructed, v_wind_reconstructed, tempReconstructed, dominantVerticalWavelength] = invertWindowedTransform(obj, windowedWaveletTransform)
+        function [u_wind_reconstructed, v_wind_reconstructed, tempReconstructed, meanVerticalWavelength] = invertWindowedTransform(obj, windowedWaveletTransform)
             % Reconstruct the wave packet at altitudes of interest and
             % scales of interest by adding up the wavelet coefficients at
             % the scales of interest. This is an implementation of equation
@@ -62,7 +62,7 @@ classdef WaveletTransform
             windowedTempWavelet = obj.tempWavelet(scale_index_1:scale_index_2, alt_index_1:alt_index_2);
             tempReconstructed = constant_coef*sum(windowedTempWavelet ./ sqrt(windowed_scales)', 1);
             v_wind_reconstructed = constant_coef*sum(windowed_v_wavelet ./ sqrt(windowed_scales)', 1);
-            dominantVerticalWavelength = mean(obj.fourierWavelength(scale_index_1:scale_index_2)); % the dominant wavelength is taken
+            meanVerticalWavelength = mean(obj.fourierWavelength(scale_index_1:scale_index_2)); % the dominant wavelength is taken
             % to be the mean of the wavelengths over the scale range of
             % interest.
         end
@@ -80,7 +80,7 @@ classdef WaveletTransform
             % transform to thresholdValue, or clips it to the next point
             % where the surface starts rising again.
             maxValue = obj.powerSurface(localMaxRow, localMaxCol);    
-            thresholdValue = 0.75*maxValue;
+            thresholdValue = 0.25*maxValue;
             column = obj.powerSurface(:, localMaxCol); % extract whole column
             row = obj.powerSurface(localMaxRow, :); % extract whole row
             % need the locations of the first minima on each side of the
@@ -89,7 +89,8 @@ classdef WaveletTransform
             % thresholdValue.
             [a, b] = findMinimaClosestToIndex(abs(column-thresholdValue), localMaxRow);
             [c, d] = findMinimaClosestToIndex(abs(row-thresholdValue), localMaxCol);
-
+            % index into this window and make sure there's only
+            % one peak inside this window.
         end
 
     end

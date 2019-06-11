@@ -1,4 +1,4 @@
-function doAnalysis(f, save, saveDir, show, lowerCutOffAltitude, upperCutOffAltitude, latitude)
+function [latitudeArray, longitudeArray, altNonFiltered, dataBlock] = doAnalysis(f, save, saveDir, show, lowerCutOffAltitude, upperCutOffAltitude, latitude)
 % does g-wave analysis for a radiosonde sounding.
 if nargin < 7
     latitude = 42.2127;
@@ -29,22 +29,38 @@ if save
       saveFileName = fullfile(saveDir, saveFileName);
    end
 end
+% Drop in Andrei's readSondeData function - 
+% will take care of NaN. Remember: time column is 
+% "duration" type. timetable.retime (or re-"alt")
 data = readRadioSondeData(f);
 [maxAlt, mai] = max(data.Alt);
+% Clear this up - ordering can be different
 [~, lai] = min(abs(data.Alt(1:mai) - lowerCutOffAltitude)); 
 [~, mai] = min(abs(data.Alt(lai:mai) - upperCutOffAltitude));
 mai = mai + lai;
 if maxAlt < lowerCutOffAltitude && upperCutOffAltitude == 40000
     fprintf("Flight %s did not reach %d m\n", f, lowerCutOffAltitude);
+    latitudeArray = []; 
+    longitudeArray = [];
+    altNonFiltered = [];
+    dataBlock = [];
     return;
 elseif upperCutOffAltitude ~= 40000 && data.Alt(mai) < (upperCutOffAltitude - 500)
     fprintf("Flight %s did not reach %d m\n", f, upperCutOffAltitude);
+    latitudeArray = []; 
+    longitudeArray = [];
+    altNonFiltered = [];
+    dataBlock = [];
     return
 elseif mai == lai + 1
+    latitudeArray = []; 
+    longitudeArray = [];
+    altNonFiltered = [];
+    dataBlock = [];
     return
 end
 
-% Prepare data 
+% Prepare data
 ws = data.Ws(lai:mai);
 ws = ws(~isnan(ws));
 wd = data.Wd(lai:mai);
@@ -60,15 +76,20 @@ time = time(~isnan(time));
 potentialTemperature = (1000.0^0.286)*temp./(pressure.^0.286); % from Jaxen
 u = ws.*cosd(wd);
 v = ws.*sind(wd);
+latitudeArray = data.Lat_(1:mai);
+longitudeArray = data.Long_(1:mai);
+latitudeArray = latitudeArray(~isnan(latitudeArray));
+longitudeArray = longitudeArray(~isnan(longitudeArray));
 
-
-% remove background winds with a cubic polynomial.
+% remove background winds with a cubic polynomial. 
 u = fitAndRemovePolynomial(time, u);
 v = fitAndRemovePolynomial(time, v);
 temp = fitAndRemovePolynomial(time, temp);
 
 % enforce uniform spatial sampling.
-heightSamplingFrequency = 50; % 50m.
+% Possibly a built-in MATLAB function?
+heightSamplingFrequency = 50; % 50 m.
+altNonFiltered = alt;
 u = averageToAltitudeResolution(u, alt, heightSamplingFrequency);
 v = averageToAltitudeResolution(v, alt, heightSamplingFrequency);
 temp = averageToAltitudeResolution(temp, alt, heightSamplingFrequency);
@@ -78,11 +99,10 @@ alt = averageToAltitudeResolution(alt, alt, heightSamplingFrequency);
 % calculate constant values to use in analysis
 bvFreqSquared = bruntVaisalaFrequency(potentialTemperature, heightSamplingFrequency); % returns the squared BV frequency.
 if size(bvFreqSquared(bvFreqSquared < 0))
-    altIndices = bvFreqSquared < 0;
-    alts = alt(altIndices);
-    disp(alts);
-    plot(bvFreqSquared(altIndices))
-    uiwait()
+     altIndices = bvFreqSquared < 0;
+     alts = alt(altIndices);
+     g = sprintf("%d, ", alts);
+     fprintf("Convective instability at altitudes: %s\n" , g);    
 end
 
 coriolisFreq = coriolisFrequency(latitude);
@@ -105,13 +125,36 @@ if show
     ylim([wt.s0 Inf])
 end
 gWaveDetected = false;
+first = true;
+xValuesForPolygon = 1:size(wt.powerSurface, 2); % get n columns
+yValuesForPolygon = wt.coi; % y values that we must check 
 for i=1:size(rows)
+     % filter local maxima to COI.
+     % create a polygon with the COI and query whether or not the x and y
+     % values (cols(i) and waveletScales(i)) are within that polygon. This
+     % function seems to work.
+     if ~inpolygon(cols(i), wt.waveletScales(rows(i)), xValuesForPolygon, yValuesForPolygon)
+         % if local maxima candidate is not inside COI polygon, skip it.
+         continue;
+     end
      % clip the wavelet transform to a box (s1, s2, a1, a2) that 
      % corresponds to where the power surface equals 1/4Smax
      [s1, s2, a1, a2] = wt.clipWindowedTransformToValue(rows(i), cols(i));
      if s1 == 0 || s2 == 0 || a1 == 0 || a2 == 0
          % Too close to an edge.
          continue
+     end
+     nCandidatesInsideWindow = 0;
+     xCoordsOfWindow = [a1 a1 a2 a2];
+     yCoordsOfWindow = [s2 s1 s1 s2];
+     for k=1:size(rows)
+         if inpolygon(cols(k), rows(k), xCoordsOfWindow, yCoordsOfWindow)
+             nCandidatesInsideWindow = nCandidatesInsideWindow + 1;
+         end
+     end
+     if nCandidatesInsideWindow > 1
+         % I should probably figure out how to visualize this.
+         continue;
      end
      wwt = WindowedWaveletTransform(s1, s2, a1, a2); % helper object to ease passing parameters in to invertWaveletTransform
      % invert the wavelet transform in the windowed transform to get a wave
@@ -128,9 +171,6 @@ for i=1:size(rows)
          % theta = 0 when wave packet does not pass filtering criteria.
         continue;
      end
-     if show
-        scatter(alt(cols(i)), wt.fourierWavelength(rows(i)), 'ro');
-     end
      % all equations below from Murphy et al, 2014:
      % "Radiosonde observations of gravity waves in the lower stratosphere
      %   over Davis, Antartica", table 2.
@@ -141,6 +181,9 @@ for i=1:size(rows)
          % frequency or if it's less than the coriolis frequency, the
          % gravity wave is not physical, so skip it.
          continue
+     end
+     if show
+        scatter(alt(cols(i)), wt.fourierWavelength(rows(i)), 'ro');
      end
      gWaveDetected = true;
      m = 2*pi / lambda_z; % vertical wavenumber (1 / meters)
@@ -155,26 +198,41 @@ for i=1:size(rows)
      intrinsicHorizGroupVel = sqrt(intrinsicZonalGroupVel^2 + intrinsicMeridionalGroupVel^2); % m/s
      lambda_h = 2*pi / k_h; % horizontal wavelength (m)
      altitudeOfDetection = mean(alt(a1:a2)); % mean of the altitude range as the central altitude of the gravity wave.
-     if save
-         % finally, save the data.
-         header = {'altOfDetection_km', 'vert_wavelength_km', 'horiz_wavelength_km', 'propagation_dir', 'axial_ratio', 'int_vert_group vel_ms)', 'int_horiz_group_vel_ms', 'int_vert_phase_spd_ms', 'int_horiz_phase_spd_ms)', 'degreeofpolarization', 'stokes_param_Q'};
-         data = [altitudeOfDetection/1000 lambda_z/1000 lambda_h/1000 rad2deg(theta), axialRatio, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed, degreeOfPolarization, Q];
-         if ~isfile(saveFileName)
-             % check if the file exists - if it doesn't, write a header to
-             % the file to ease further analysis.
-             writecell([header; num2cell(data)], saveFileName);
-         else
-             % if the file does exist, append to it.
-             % There is no overwrite functionality, so it's possible to run
-             % the analysis multiple times and write duplicates to a file.
-             % This must be taken care of in later analysis.
-             dlmwrite(saveFileName, data, 'delimiter', ',', '-append');
-         end
+     [~, detectionIndex] = min(abs(altNonFiltered - altitudeOfDetection));
+     latitudeOfDetection = latitudeArray(detectionIndex);
+     longitudeOfDetection = longitudeArray(detectionIndex);
+     data = [altitudeOfDetection/1000 latitudeOfDetection longitudeOfDetection lambda_z/1000 lambda_h/1000 rad2deg(theta), axialRatio, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed, degreeOfPolarization, Q];
+     if first
+         dataArray = data;
+         first = false;
+     else
+         dataArray = [dataArray; data];
      end
+     
      fprintf("Alt: %f, L_z: %f, L_h: %f, Theta: %f, w/f: %f, period (hours): %f, Vert. group vel: %f, Horiz. group vel: %f, Vert. phase spd: %f, Horiz. phase spd: %f\n", altitudeOfDetection/1000, lambda_z/1000, lambda_h/1000, rad2deg(theta), axialRatio, (2*pi/intrinsicFreq)/3600, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed);
+end
+if save && ~isfile(saveFileName) && gWaveDetected
+         % check if the file exists - if it doesn't, write a header to
+         % the file to ease further analysis.
+         % writecell([header; num2cell(data)], saveFileName);
+         header = {'alt_of_detection_km' 'lat_of_detection' 'lon_of_detection' 'vert_wavelength_km' 'horiz_wavelength_km' 'propagation_dir' 'axial_ratio' 'int_vert_group_vel_ms' 'int_horiz_group_vel_ms' 'int_vert_phase_spd_ms' 'int_horiz_phase_spd_ms' 'degreeofpolarization' 'stokes_param_Q'};
+         dataBlock = array2table(dataArray, 'VariableNames', header);
+         writetable(dataBlock, saveFileName);
+elseif save && isfile(saveFileName) && gWaveDetected
+         % if the file does exist, append to it.
+         % There is no overwrite functionality, so it's possible to run
+         % the analysis multiple times and write duplicates to a file.
+         % This must be taken care of in later analysis.
+         % TODO create a table, use writetable
+         dlmwrite(saveFileName, dataArray, 'delimiter', ',', '-append');
+         header = {'alt_of_detection_km' 'lat_of_detection' 'lon_of_detection' 'vert_wavelength_km' 'horiz_wavelength_km' 'propagation_dir' 'axial_ratio' 'int_vert_group_vel_ms' 'int_horiz_group_vel_ms' 'int_vert_phase_spd_ms' 'int_horiz_phase_spd_ms' 'degreeofpolarization' 'stokes_param_Q'};
+         dataBlock = array2table(dataArray, 'VariableNames', header);
 end
 if ~gWaveDetected
     fprintf("No gravity waves detected.\n");
+    dataBlock = [];
+elseif gWaveDetected
+    header = {'alt_of_detection_km' 'lat_of_detection' 'lon_of_detection' 'vert_wavelength_km' 'horiz_wavelength_km' 'propagation_dir' 'axial_ratio' 'int_vert_group_vel_ms' 'int_horiz_group_vel_ms' 'int_vert_phase_spd_ms' 'int_horiz_phase_spd_ms' 'degreeofpolarization' 'stokes_param_Q'};
+    dataBlock = array2table(dataArray, 'VariableNames', header);
 end
 end
-

@@ -1,4 +1,4 @@
-data_dir = '/Users/thomascolligan/Box/Eclipse 2019/Practice_Flight_Data/';
+data_dir = '/Users/thomascolligan/Box/Eclipse 2019/Practice_Flight_Data/Profile';
 t = fullfile(data_dir, "*.txt");
 files = dir(t);
 maxLength = 0;
