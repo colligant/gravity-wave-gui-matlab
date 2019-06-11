@@ -87,7 +87,6 @@ v = fitAndRemovePolynomial(time, v);
 temp = fitAndRemovePolynomial(time, temp);
 
 % enforce uniform spatial sampling.
-% Possibly a built-in MATLAB function?
 heightSamplingFrequency = 50; % 50 m.
 altNonFiltered = alt;
 u = averageToAltitudeResolution(u, alt, heightSamplingFrequency);
@@ -111,8 +110,7 @@ coriolisFreq = coriolisFrequency(latitude);
 wt = WaveletTransform(u, v, temp, heightSamplingFrequency);
 % get local maxima that (could) correspond to gravity wave packets
 % "Peaks were identified as a function of scale and altitude" - MAL2014.
-[rows, cols] = find(imregionalmax(wt.powerSurface, 8));
-%[rows, cols] = filterLocalMaxOutsideOfCOI(wt.coi, wt.fourierWavelength, rows, cols);
+[rows, cols] = find(imregionalmax(wt.powerSurface, 8)); % 8 for 8-connectivity
 if show
     figure()
     contourf(alt, wt.fourierWavelength, wt.powerSurface);
@@ -164,6 +162,8 @@ for i=1:size(rows)
      % wave around the wave altitude ``z'' and to estimate the vertical
      % wavelength, lambda_z" - MAL2014.
      [ui, vi, tempi, lambda_z] = wt.invertWindowedTransform(wwt);
+     % ^ u reconstructed, v reconstructed, temp reconstructed, vertical
+     % wavenumber.
      % estimateParametersFromWavePacket thresholds wave candidates based on
      % criteria laid out in Murphy et al, 2014.
      [~, ~, Q, theta, axialRatio, degreeOfPolarization] = estimateParametersFromWavePacket(ui, vi, tempi);
@@ -186,7 +186,7 @@ for i=1:size(rows)
         scatter(alt(cols(i)), wt.fourierWavelength(rows(i)), 'ro');
      end
      gWaveDetected = true;
-     m = 2*pi / lambda_z; % vertical wavenumber (1 / meters)
+     m = 2*pi / lambda_z; % vertical wavelength (1 / meters)
      k_h = sqrt(((coriolisFreq^2*m^2)/(bvMean))*(intrinsicFreq^2/coriolisFreq^2 - 1)); % horizontal wavenumber (1 / meters)
      intrinsicVerticalGroupVel = -(1 / (intrinsicFreq*m))*(intrinsicFreq^2 - coriolisFreq^2); % m/s
      zonalWaveNumber = k_h*sin(theta);% 1/m

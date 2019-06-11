@@ -11,7 +11,6 @@ save = true;
 lowerCutOffAltitude = 12000;
 upperCutOffAltitude = 40000;
 latitude = 42.89;
-% TODO test w/ simple gaussian envelope sine wave. 
 f1 = figure;
 f2 = figure;
 set(0, 'CurrentFigure', f1);
@@ -99,7 +98,7 @@ set(0, 'CurrentFigure', f2);
 whatIsGoingOn = dir(t);
 filenames = whatIsGoingOn(indicesForFilenames)';
 xticks(offsets);
-xticklabels({filenames.name}); % these curly brackets took 3 hours of my life.
+xticklabels({filenames.name}); % these curly brackets took 2 hours of my life.
 set(gca,'XTickLabelRotation', 45)
 ylabel("Altitude (km)")
 xlabel("Launch")

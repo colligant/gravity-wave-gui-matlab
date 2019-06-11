@@ -17,11 +17,11 @@ if degreeOfPolarization > 1
     fprintf("Degree of polarization > 1\n");
 end
 if abs(Q) < 0.05 || abs(P) < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
-   theta = 0;
-   axialRatio = 0;
-   degreeOfPolarization = 0;
-   Q = 0;
-   return;
+    theta = 0;
+    axialRatio = 0;
+    degreeOfPolarization = 0;
+    Q = 0;
+    return;
 else
     theta = 0.5 * atan2(P, D); % Zink, 2000 eqn 3.14 TODO investigate atan2
     % Axial ratio
