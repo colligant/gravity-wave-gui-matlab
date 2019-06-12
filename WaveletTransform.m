@@ -91,6 +91,15 @@ classdef WaveletTransform
             [c, d] = findMinimaClosestToIndex(abs(row-thresholdValue), localMaxCol);
             % index into this window and make sure there's only
             % one peak inside this window.
+            if b > size(obj.powerSurface, 1)
+                x = size(obj.powerSurface, 1);
+                fprintf("%d , %d\n", x, b);
+            end
+            if d > size(obj.powerSurface, 2)
+                x = size(obj.powerSurface, 2);
+                fprintf("%d , %d\n", x, d);
+            end
+            
         end
 
     end

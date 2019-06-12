@@ -1,38 +1,45 @@
 warning('off', 'MATLAB:polyfit:RepeatedPointsOrRescale');
 addpath('wave_matlab/');
-%data_dir = 'eclipseData/';
-data_dir = '/Users/thomascolligan/box/Eclipse 2019/Practice_Flight_Data/Profile';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                           User defined variables                       %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% dataDirectory = 'eclipseData/';
+dataDirectory = '/Users/thomascolligan/box/Eclipse 2019/Practice_Flight_Data/Profile';
 % GIF of wavelet transforms over time with imwrite
-t = fullfile(data_dir, "*.txt");
-files = dir(t);
 saveDirectory = 'gravityWaveData/';
-show = false;
-save = true;
-lowerCutOffAltitude = 12000;
-upperCutOffAltitude = 40000;
-latitude = 42.89;
+showPowerSurfaces = true; % Do you want to show the wavelet transforms?
+save = false; % Do you want to save the data? It will save in saveDirectory.
+lowerCutOffAltitude = 12000; % Altitude where you want to start analysis
+upperCutOffAltitude = 40000; % Altitude where you want to end analysis - 
+% a value of 40000 will go to the highest point in the profile.
+latitude = 46; % Latitude of launch location.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%                            End of user editing                         %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+textFiles = fullfile(dataDirectory, "*.txt");
+files = dir(textFiles);
 f1 = figure;
 f2 = figure;
 set(0, 'CurrentFigure', f1);
-hold on
-minLat = Inf;
-minLon = Inf;
-maxLat = -Inf;
-maxLon = -Inf;
+hold on;
 set(0, 'CurrentFigure', f2);
 hold on;
 counter = 0;
 first = true;
+minLat = Inf;
+minLon = Inf;
+maxLat = -Inf;
+maxLon = -Inf;
 for i=1:size(files)
     current = files(i).name;
     fprintf("Current file: %s\n", current);
-    current = fullfile(data_dir, current);
+    current = fullfile(dataDirectory, current);
     if contains(current, 'W4_L1') && ~contains(current, 'bad_data_removed')
         % removed the bad data manually
         continue;
     end
     try
-        [latitudeArray, longitudeArray, altitude, data] = doAnalysis(current, save, saveDirectory, show, lowerCutOffAltitude, upperCutOffAltitude);
+        [latitudeArray, longitudeArray, altitude, data] = doAnalysis(current, save, saveDirectory, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude);
         if isempty(data)
             continue;
         end
@@ -53,16 +60,18 @@ for i=1:size(files)
             minLon = mLon;
         end
         set(0, 'CurrentFigure', f1);
-        mapshow(longitudeArray, latitudeArray);
-        magnitudes = data.axial_ratio;
+        plot3(longitudeArray, latitudeArray, altitude);
+        magnitudes = 0*data.axial_ratio + 0.1;
         angle = data.propagation_dir;
-        quiver(data.lon_of_detection, data.lat_of_detection, magnitudes.*cosd(angle), magnitudes.*sind(angle))
+        quiver3(data.lon_of_detection, data.lat_of_detection, ...
+            data.alt_of_detection_km*1000, magnitudes.*cosd(angle), ...
+            magnitudes.*sind(angle), zeros(size(angle), 'like', angle), 0);
         set(0, 'CurrentFigure', f2);
         offset = 10;
         placeholder = zeros(size(altitude), 'like', altitude) + (counter*offset);
-        x = zeros(size(data.alt_of_detection_km), 'like', data.alt_of_detection_km) + (counter*offset);
         plot(placeholder, altitude/1000, 'k');
         hold on;
+        magnitudes = data.axial_ratio;
         for q=1:size(data.alt_of_detection_km)
             x1 = counter*offset;
             x2 = counter*offset + magnitudes(q)*cosd(angle(q));
@@ -70,7 +79,6 @@ for i=1:size(files)
             y2 = data.alt_of_detection_km(q) + magnitudes(q)*sind(angle(q));
             plot([x1 x2], [y1 y2], 'r');
         end
-        
         scaleFactor = 15;
         if first
             indicesForFilenames = i;
@@ -94,9 +102,20 @@ end
 set(0, 'CurrentFigure', f1);
 xlim([minLon maxLon])
 ylim([minLat maxLat])
+xlabel('Longitude (deg)');
+ylabel("Latitude (deg)");
+zlabel("Altitude (m)");
+title("Gravity wave detection altitudes and directions, all summer launches");
+tiffPath = 'montana_dem.tif';
+[mt, R] = geotiffread(tiffPath);
+info = geotiffinfo(tiffPath);
+mt = double(mt);
+[x, y] = pixcenters(info);
+h = surf(x, y, mt);
+set(h,'LineStyle', 'none')
 set(0, 'CurrentFigure', f2);
-whatIsGoingOn = dir(t);
-filenames = whatIsGoingOn(indicesForFilenames)';
+allFiles = dir(textFiles);
+filenames = allFiles(indicesForFilenames)';
 xticks(offsets);
 xticklabels({filenames.name}); % these curly brackets took 2 hours of my life.
 set(gca,'XTickLabelRotation', 45)

@@ -1,4 +1,4 @@
-function [latitudeArray, longitudeArray, altNonFiltered, dataBlock] = doAnalysis(f, save, saveDir, show, lowerCutOffAltitude, upperCutOffAltitude, latitude)
+function [latitudeArray, longitudeArray, altNonFiltered, dataBlock] = doAnalysis(f, save, saveDir, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude, latitude)
 % does g-wave analysis for a radiosonde sounding.
 if nargin < 7
     latitude = 42.2127;
@@ -10,7 +10,7 @@ if nargin < 5
     lowerCutOffAltitude = 12000;
 end
 if nargin < 4
-    show = false;
+    showPowerSurfaces = false;
 end
 if nargin < 3
     saveDirExists = false;
@@ -78,6 +78,8 @@ u = ws.*cosd(wd);
 v = ws.*sind(wd);
 latitudeArray = data.Lat_(1:mai);
 longitudeArray = data.Long_(1:mai);
+altNonFiltered = data.Alt(1:mai);
+altNonFiltered = altNonFiltered(~isnan(altNonFiltered));
 latitudeArray = latitudeArray(~isnan(latitudeArray));
 longitudeArray = longitudeArray(~isnan(longitudeArray));
 
@@ -88,7 +90,6 @@ temp = fitAndRemovePolynomial(time, temp);
 
 % enforce uniform spatial sampling.
 heightSamplingFrequency = 50; % 50 m.
-altNonFiltered = alt;
 u = averageToAltitudeResolution(u, alt, heightSamplingFrequency);
 v = averageToAltitudeResolution(v, alt, heightSamplingFrequency);
 temp = averageToAltitudeResolution(temp, alt, heightSamplingFrequency);
@@ -111,8 +112,9 @@ wt = WaveletTransform(u, v, temp, heightSamplingFrequency);
 % get local maxima that (could) correspond to gravity wave packets
 % "Peaks were identified as a function of scale and altitude" - MAL2014.
 [rows, cols] = find(imregionalmax(wt.powerSurface, 8)); % 8 for 8-connectivity
-if show
-    figure()
+if showPowerSurfaces
+    f1 = figure;
+    set(0, 'CurrentFigure', f1);
     contourf(alt, wt.fourierWavelength, wt.powerSurface);
     [~, titleName, ~] = fileparts(f);
     set(gca,'YScale', 'log')
@@ -151,7 +153,16 @@ for i=1:size(rows)
          end
      end
      if nCandidatesInsideWindow > 1
-         % I should probably figure out how to visualize this.
+         % visualize power surface with surf()
+         % todo: Split power surface based on how many local maxima it
+         % contains.
+%          figure
+%          subplot(1, 2, 1)
+%          contourf(wt.powerSurface) 
+%          hold on
+%          p = polyshape(xCoordsOfWindow, yCoordsOfWindow);
+%          plot(p, 'FaceColor', 'red');
+%          subplot(1, 2, 2)
          continue;
      end
      wwt = WindowedWaveletTransform(s1, s2, a1, a2); % helper object to ease passing parameters in to invertWaveletTransform
@@ -182,7 +193,8 @@ for i=1:size(rows)
          % gravity wave is not physical, so skip it.
          continue
      end
-     if show
+     if showPowerSurfaces
+        set(0, 'CurrentFigure', f1);
         scatter(alt(cols(i)), wt.fourierWavelength(rows(i)), 'ro');
      end
      gWaveDetected = true;
@@ -218,12 +230,12 @@ if save && ~isfile(saveFileName) && gWaveDetected
          header = {'alt_of_detection_km' 'lat_of_detection' 'lon_of_detection' 'vert_wavelength_km' 'horiz_wavelength_km' 'propagation_dir' 'axial_ratio' 'int_vert_group_vel_ms' 'int_horiz_group_vel_ms' 'int_vert_phase_spd_ms' 'int_horiz_phase_spd_ms' 'degreeofpolarization' 'stokes_param_Q'};
          dataBlock = array2table(dataArray, 'VariableNames', header);
          writetable(dataBlock, saveFileName);
+         
 elseif save && isfile(saveFileName) && gWaveDetected
          % if the file does exist, append to it.
          % There is no overwrite functionality, so it's possible to run
          % the analysis multiple times and write duplicates to a file.
          % This must be taken care of in later analysis.
-         % TODO create a table, use writetable
          dlmwrite(saveFileName, dataArray, 'delimiter', ',', '-append');
          header = {'alt_of_detection_km' 'lat_of_detection' 'lon_of_detection' 'vert_wavelength_km' 'horiz_wavelength_km' 'propagation_dir' 'axial_ratio' 'int_vert_group_vel_ms' 'int_horiz_group_vel_ms' 'int_vert_phase_spd_ms' 'int_horiz_phase_spd_ms' 'degreeofpolarization' 'stokes_param_Q'};
          dataBlock = array2table(dataArray, 'VariableNames', header);
