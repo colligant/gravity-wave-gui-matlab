@@ -128,8 +128,7 @@ yValuesForPolygon = wt.coi; % y values that we must check
 for i=1:size(rows)
      % filter local maxima to COI.
      % create a polygon with the COI and query whether or not the x and y
-     % values (cols(i) and waveletScales(i)) are within that polygon. This
-     % function seems to work.
+     % values (cols(i) and waveletScales(i)) are within that polygon.
      if ~inpolygon(cols(i), wt.waveletScales(rows(i)), xValuesForPolygon, yValuesForPolygon)
          % if local maxima candidate is not inside COI polygon, skip it.
          continue;
