@@ -31,6 +31,7 @@ minLat = Inf;
 minLon = Inf;
 maxLat = -Inf;
 maxLon = -Inf;
+% Iterate over files in dataDirectory
 for i=1:size(files)
     current = files(i).name;
     fprintf("Current file: %s\n", current);
@@ -43,7 +44,9 @@ for i=1:size(files)
 %         continue;
 %     end
     try
+        % All analysis logic is in doAnalysis
         [latitudeArray, longitudeArray, altitude, data] = doAnalysis(current, save, saveDirectory, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude);
+        % the rest of the code here is plotting and error checking.
         if isempty(data)
             continue;
         end
@@ -110,7 +113,7 @@ xlabel('Longitude (deg)');
 ylabel("Latitude (deg)");
 zlabel("Altitude (m)");
 title("Gravity wave detection altitudes and directions, all summer launches");
-tiffPath = 'montana_dem.tif';
+tiffPath = 'private/montana_dem.tif';
 [mt, R] = geotiffread(tiffPath);
 info = geotiffinfo(tiffPath);
 mt = double(mt);
