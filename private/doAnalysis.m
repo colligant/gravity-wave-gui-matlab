@@ -29,12 +29,8 @@ if save
       saveFileName = fullfile(saveDir, saveFileName);
    end
 end
-% Drop in Andrei's readSondeData function - 
-% will take care of NaN. Remember: time column is 
-% "duration" type. timetable.retime (or re-"alt")
 data = readRadioSondeData(f);
 [maxAlt, mai] = max(data.Alt);
-% Clear this up - ordering can be different
 [~, lai] = min(abs(data.Alt(1:mai) - lowerCutOffAltitude)); 
 [~, mai] = min(abs(data.Alt(lai:mai) - upperCutOffAltitude));
 mai = mai + lai;
@@ -88,8 +84,8 @@ u = fitAndRemovePolynomial(time, u);
 v = fitAndRemovePolynomial(time, v);
 temp = fitAndRemovePolynomial(time, temp);
 
-% enforce uniform spatial sampling.
-heightSamplingFrequency = 50; % 50 m.
+% enforce uniform spatial sampling...
+heightSamplingFrequency = 50; % ... of 50 m.
 u = averageToAltitudeResolution(u, alt, heightSamplingFrequency);
 v = averageToAltitudeResolution(v, alt, heightSamplingFrequency);
 temp = averageToAltitudeResolution(temp, alt, heightSamplingFrequency);
@@ -98,6 +94,7 @@ alt = averageToAltitudeResolution(alt, alt, heightSamplingFrequency);
 
 % calculate constant values to use in analysis
 bvFreqSquared = bruntVaisalaFrequency(potentialTemperature, heightSamplingFrequency); % returns the squared BV frequency.
+
 if size(bvFreqSquared(bvFreqSquared < 0))
      altIndices = bvFreqSquared < 0;
      alts = alt(altIndices);
@@ -163,6 +160,8 @@ for i=1:size(rows)
 %          p = polyshape(xCoordsOfWindow, yCoordsOfWindow);
 %          plot(p, 'FaceColor', 'red');
 %          subplot(1, 2, 2)
+%          surf(wt.powerSurface(s1:s2, a1:a2));
+%          uiwait();
          continue;
      end
      wwt = WindowedWaveletTransform(s1, s2, a1, a2); % helper object to ease passing parameters in to invertWaveletTransform

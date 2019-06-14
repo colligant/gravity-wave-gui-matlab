@@ -4,18 +4,19 @@ addpath('wave_matlab/');
 %                           User defined variables                       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % dataDirectory = 'eclipseData/';
-dataDirectory = '/Users/thomascolligan/box/Eclipse 2019/Practice_Flight_Data/Profile';
-% GIF of wavelet transforms over time with imwrite
+dataDirectory = '/Users/thomascolligan/Practice_Flight_Data/';
 saveDirectory = 'gravityWaveData/';
-showPowerSurfaces = true; % Do you want to show the wavelet transforms?
+showPowerSurfaces = false; % Do you want to show the wavelet transform power surfaces?
 save = false; % Do you want to save the data? It will save in saveDirectory.
-lowerCutOffAltitude = 12000; % Altitude where you want to start analysis
+lowerCutOffAltitude = 0; % Altitude where you want to start analysis
 upperCutOffAltitude = 40000; % Altitude where you want to end analysis - 
 % a value of 40000 will go to the highest point in the profile.
 latitude = 46; % Latitude of launch location.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                            End of user editing                         %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TODO: Make quiver arrows the same color as the launch color.
+% GIF of wavelet transforms over time with imwrite
 textFiles = fullfile(dataDirectory, "*.txt");
 files = dir(textFiles);
 f1 = figure;
@@ -38,6 +39,9 @@ for i=1:size(files)
         % removed the bad data manually
         continue;
     end
+%     if ~contains(current, 'W5')
+%         continue;
+%     end
     try
         [latitudeArray, longitudeArray, altitude, data] = doAnalysis(current, save, saveDirectory, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude);
         if isempty(data)
@@ -100,8 +104,8 @@ for i=1:size(files)
         fprintf("----------------------------\n");
 end
 set(0, 'CurrentFigure', f1);
-xlim([minLon maxLon])
-ylim([minLat maxLat])
+% xlim([minLon maxLon])
+% ylim([minLat maxLat])
 xlabel('Longitude (deg)');
 ylabel("Latitude (deg)");
 zlabel("Altitude (m)");
