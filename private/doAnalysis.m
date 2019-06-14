@@ -150,8 +150,6 @@ for i=1:size(rows)
      end
      if nCandidatesInsideWindow > 1
          % visualize power surface with surf()
-         % todo: Split power surface based on how many local maxima it
-         % contains.
 %          figure
 %          subplot(1, 2, 1)
 %          contourf(wt.powerSurface) 
