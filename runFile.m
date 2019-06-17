@@ -6,9 +6,9 @@ addpath('wave_matlab/');
 % dataDirectory = 'eclipseData/';
 dataDirectory = '/Users/thomascolligan/Practice_Flight_Data/';
 saveDirectory = 'gravityWaveData/';
-showPowerSurfaces = true; % Do you want to show the wavelet transform power surfaces?
-save = false; % Do you want to save the data? It will save in saveDirectory.
-lowerCutOffAltitude = 0; % Altitude where you want to start analysis
+showPowerSurfaces = false; % Do you want to show the wavelet transform power surfaces?
+save = true; % Do you want to save the data? It will save in saveDirectory.
+lowerCutOffAltitude = 12000; % Altitude where you want to start analysis
 upperCutOffAltitude = 40000; % Altitude where you want to end analysis - 
 % a value of 40000 will go to the highest point in the profile.
 latitude = 46; % Latitude of launch location.
@@ -41,9 +41,7 @@ for i=1:size(files)
         % removed the bad data manually
         continue;
     end
-    if ~contains(current, 'W6')
-        continue;
-    end
+    
     try
         % All analysis logic is in doAnalysis
         [latitudeArray, longitudeArray, altitude, data, ~, ~, ~] = doAnalysis(current, save, saveDirectory, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude);
@@ -125,7 +123,7 @@ set(0, 'CurrentFigure', f1);
 xlabel('Longitude (deg)');
 ylabel("Latitude (deg)");
 zlabel("Altitude (m)");
-title("Gravity wave detection altitudes and directions, all summer launches");
+title("Gravity wave detection altitudes and directions (deg cw from North)");
 tiffPath = 'private/montana_dem.tif';
 [mt, R] = geotiffread(tiffPath);
 info = geotiffinfo(tiffPath);
@@ -137,7 +135,7 @@ set(0, 'CurrentFigure', f2);
 allFiles = dir(textFiles);
 filenames = allFiles(indicesForFilenames)';
 xticks(offsets);
-xticklabels({filenames.name}); % these curly brackets took 2 hours of my life.
+xticklabels({filenames.name});
 set(gca,'XTickLabelRotation', 45)
 ylabel("Altitude (km)")
 xlabel("Launch")

@@ -6,6 +6,9 @@ for i=1:size(files)
     current = files(i).name;
     fprintf("Current file: %s\n", current);
     current = fullfile(data_dir, current);
+    if contains(current, 'W6')
+        continue;
+    end
     if first
         data = readGravityWaveData(current); 
         first = false;
@@ -13,24 +16,6 @@ for i=1:size(files)
         data = [data; readGravityWaveData(current)];
     end
 end
-scatter(data.horiz_wavelength_km, data.vert_wavelength_km)
-
-% figure
-% plot3(data.lon_of_detection, data.lat_of_detection, data.alt_of_detection_km, 'ro');
-% hold on;
-% ar = data.axial_ratio;
-% quiver3(data.lon_of_detection, data.lat_of_detection, data.alt_of_detection_km, ar.*cosd(data.propagation_dir), ar.*sind(data.propagation_dir), 0*data.alt_of_detection_km)
-% grid on;
-% figure
-% plot(data.lon_of_detection, data.lat_of_detection, 'ro');
-% hold on;
-% ar = data.axial_ratio;
-% quiver(data.lon_of_detection, data.lat_of_detection, ar.*cosd(data.propagation_dir), ar.*sind(data.propagation_dir))
-% grid on;
-
-
-
-
-
-
-
+ax = polarhistogram(data.propagation_dir, 10);
+set(gca,'ThetaZeroLocation','top',...
+        'ThetaDir','counterclockwise');

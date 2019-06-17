@@ -25,7 +25,7 @@ if abs(Q) < 0.05 || abs(P) < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolar
 else
     theta = 0.5 * atan2(P, D); % Zink, 2000 eqn 3.14 TODO investigate atan2
     % Axial ratio
-    axialRatio = abs(cot(0.5*asin(Q/(degreeOfPolarization*I))));
+    % axialRatio = abs(cot(0.5*asin(Q/(degreeOfPolarization*I))));
     % Murphy et al (2014), Koushik et al (2019), and Vincent (1989)
     % Look at phase b/t u' and T+90'
     % From the polarization relations, we know that u' and T' are +-90 deg
@@ -36,6 +36,7 @@ else
     rotationMatrix = [cos(theta) sin(theta); -sin(theta) cos(theta)];
     uv = [u; v];
     uvRotated = rotationMatrix * uv;
+    axialRatio = abs(mean(uv(1, :)) / mean(uv(2, :)));
     uRotated = uvRotated(1, :);
     gamma = mean(uRotated.*imag(tempWavePacket)); % Koushik et al, page 8.
     if gamma < 0

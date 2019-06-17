@@ -189,6 +189,7 @@ for i=1:size(rows)
          % theta = 0 when wave packet does not pass filtering criteria.
         continue;
      end
+     theta = azimuthFromUnitCircle(rad2deg(theta));
      % all equations below from Murphy et al, 2014:
      % "Radiosonde observations of gravity waves in the lower stratosphere
      %   over Davis, Antartica", table 2.
@@ -220,7 +221,7 @@ for i=1:size(rows)
      [~, detectionIndex] = min(abs(altNonFiltered - altitudeOfDetection));
      latitudeOfDetection = latitudeArray(detectionIndex);
      longitudeOfDetection = longitudeArray(detectionIndex);
-     data = [altitudeOfDetection/1000 latitudeOfDetection longitudeOfDetection lambda_z/1000 lambda_h/1000 rad2deg(theta), axialRatio, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed, degreeOfPolarization, Q];
+     data = [altitudeOfDetection/1000 latitudeOfDetection longitudeOfDetection lambda_z/1000 lambda_h/1000, theta, axialRatio, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed, degreeOfPolarization, Q];
      if first
          dataArray = data;
          gWaveLocations = [cols(i) rows(i)];
@@ -230,7 +231,7 @@ for i=1:size(rows)
          gWaveLocations = [gWaveLocations; cols(i) rows(i)];
      end
      
-     fprintf("Alt: %f, L_z: %f, L_h: %f, Theta: %f, w/f: %f, period (hours): %f, Vert. group vel: %f, Horiz. group vel: %f, Vert. phase spd: %f, Horiz. phase spd: %f\n", altitudeOfDetection/1000, lambda_z/1000, lambda_h/1000, rad2deg(theta), axialRatio, (2*pi/intrinsicFreq)/3600, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed);
+     fprintf("Alt: %f, L_z: %f, L_h: %f, Theta: %f, w/f: %f, period (hours): %f, Vert. group vel: %f, Horiz. group vel: %f, Vert. phase spd: %f, Horiz. phase spd: %f\n", altitudeOfDetection/1000, lambda_z/1000, lambda_h/1000, theta, axialRatio, (2*pi/intrinsicFreq)/3600, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed);
 end
 if save && ~isfile(saveFileName) && gWaveDetected
          % check if the file exists - if it doesn't, write a header to
