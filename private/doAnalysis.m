@@ -1,4 +1,4 @@
-function [latitudeArray, longitudeArray, altNonFiltered, dataBlock] = doAnalysis(f, save, saveDir, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude, latitude)
+function [latitudeArray, longitudeArray, altNonFiltered, dataBlock, waveletTransform, clippedAlt, gWaveLocations] = doAnalysis(f, save, saveDir, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude, latitude)
 % does g-wave analysis for a radiosonde sounding.
 if nargin < 7
     latitude = 42.2127;
@@ -40,19 +40,28 @@ if maxAlt < lowerCutOffAltitude && upperCutOffAltitude == 40000
     longitudeArray = [];
     altNonFiltered = [];
     dataBlock = [];
-    return;
-elseif upperCutOffAltitude ~= 40000 && data.Alt(mai) < (upperCutOffAltitude - 500)
+    waveletTransform = [];
+    clippedAlt = [];
+    gWaveLocations = [];
+    return
+elseif upperCutOffAltitude ~= 40000 && data.Alt(mai) < (upperCutOffAltitude)
     fprintf("Flight %s did not reach %d m\n", f, upperCutOffAltitude);
     latitudeArray = []; 
     longitudeArray = [];
     altNonFiltered = [];
     dataBlock = [];
+    waveletTransform = [];
+    clippedAlt = [];
+    gWaveLocations = [];
     return
 elseif mai == lai + 1
     latitudeArray = []; 
     longitudeArray = [];
     altNonFiltered = [];
     dataBlock = [];
+    waveletTransform = [];
+    clippedAlt = [];
+    gWaveLocations = [];
     return
 end
 
@@ -91,7 +100,7 @@ v = averageToAltitudeResolution(v, alt, heightSamplingFrequency);
 temp = averageToAltitudeResolution(temp, alt, heightSamplingFrequency);
 potentialTemperature = averageToAltitudeResolution(potentialTemperature, alt, heightSamplingFrequency);
 alt = averageToAltitudeResolution(alt, alt, heightSamplingFrequency);
-
+clippedAlt = alt;
 % calculate constant values to use in analysis
 bvFreqSquared = bruntVaisalaFrequency(potentialTemperature, heightSamplingFrequency); % returns the squared BV frequency.
 
@@ -106,6 +115,7 @@ coriolisFreq = coriolisFrequency(latitude);
 
 % finally, do the wavelet transform.
 wt = WaveletTransform(u, v, temp, heightSamplingFrequency);
+waveletTransform = wt;
 % get local maxima that (could) correspond to gravity wave packets
 % "Peaks were identified as a function of scale and altitude" - MAL2014.
 [rows, cols] = find(imregionalmax(wt.powerSurface, 8)); % 8 for 8-connectivity
@@ -125,6 +135,7 @@ gWaveDetected = false;
 first = true;
 xValuesForPolygon = 1:size(wt.powerSurface, 2); % get n columns
 yValuesForPolygon = wt.coi; % y values that we must check 
+gWaveLocations = [];
 for i=1:size(rows)
      % filter local maxima to COI.
      % create a polygon with the COI and query whether or not the x and y
@@ -212,9 +223,11 @@ for i=1:size(rows)
      data = [altitudeOfDetection/1000 latitudeOfDetection longitudeOfDetection lambda_z/1000 lambda_h/1000 rad2deg(theta), axialRatio, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed, degreeOfPolarization, Q];
      if first
          dataArray = data;
+         gWaveLocations = [cols(i) rows(i)];
          first = false;
      else
          dataArray = [dataArray; data];
+         gWaveLocations = [gWaveLocations; cols(i) rows(i)];
      end
      
      fprintf("Alt: %f, L_z: %f, L_h: %f, Theta: %f, w/f: %f, period (hours): %f, Vert. group vel: %f, Horiz. group vel: %f, Vert. phase spd: %f, Horiz. phase spd: %f\n", altitudeOfDetection/1000, lambda_z/1000, lambda_h/1000, rad2deg(theta), axialRatio, (2*pi/intrinsicFreq)/3600, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed);

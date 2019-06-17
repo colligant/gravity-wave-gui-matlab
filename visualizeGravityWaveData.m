@@ -13,6 +13,8 @@ for i=1:size(files)
         data = [data; readGravityWaveData(current)];
     end
 end
+scatter(data.horiz_wavelength_km, data.vert_wavelength_km)
+
 % figure
 % plot3(data.lon_of_detection, data.lat_of_detection, data.alt_of_detection_km, 'ro');
 % hold on;

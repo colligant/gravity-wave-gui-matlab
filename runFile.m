@@ -6,7 +6,7 @@ addpath('wave_matlab/');
 % dataDirectory = 'eclipseData/';
 dataDirectory = '/Users/thomascolligan/Practice_Flight_Data/';
 saveDirectory = 'gravityWaveData/';
-showPowerSurfaces = false; % Do you want to show the wavelet transform power surfaces?
+showPowerSurfaces = true; % Do you want to show the wavelet transform power surfaces?
 save = false; % Do you want to save the data? It will save in saveDirectory.
 lowerCutOffAltitude = 0; % Altitude where you want to start analysis
 upperCutOffAltitude = 40000; % Altitude where you want to end analysis - 
@@ -17,6 +17,7 @@ latitude = 46; % Latitude of launch location.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % TODO: Make quiver arrows the same color as the launch color.
 % GIF of wavelet transforms over time with imwrite
+% TODO get tropopause values from radiosonde flights
 textFiles = fullfile(dataDirectory, "*.txt");
 files = dir(textFiles);
 f1 = figure;
@@ -40,16 +41,17 @@ for i=1:size(files)
         % removed the bad data manually
         continue;
     end
-%     if ~contains(current, 'W5')
-%         continue;
-%     end
+    if ~contains(current, 'W6')
+        continue;
+    end
     try
         % All analysis logic is in doAnalysis
-        [latitudeArray, longitudeArray, altitude, data] = doAnalysis(current, save, saveDirectory, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude);
+        [latitudeArray, longitudeArray, altitude, data, ~, ~, ~] = doAnalysis(current, save, saveDirectory, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude);
         % the rest of the code here is plotting and error checking.
         if isempty(data)
             continue;
         end
+        % Get latitude of bounding box around all radiosondes
         mLat = min(latitudeArray);
         mLon = min(longitudeArray);
         mxLat = max(latitudeArray);
@@ -66,8 +68,12 @@ for i=1:size(files)
         if mLon < minLon
             minLon = mLon;
         end
+        % plot the latitude, longitude, and altitude in 3d
         set(0, 'CurrentFigure', f1);
         plot3(longitudeArray, latitudeArray, altitude);
+        % 3D plot magnitudes of quiver have to be 0 or else the plot is 
+        % weirdly scaled. The 3D plot is just for altitude of detection and
+        % propagation direction.
         magnitudes = 0*data.axial_ratio + 0.1;
         angle = data.propagation_dir;
         quiver3(data.lon_of_detection, data.lat_of_detection, ...
@@ -75,10 +81,17 @@ for i=1:size(files)
             magnitudes.*sind(angle), zeros(size(angle), 'like', angle), 0);
         set(0, 'CurrentFigure', f2);
         offset = 10;
+        % Plot a vertical line with placeholder, each one offset by 10 from
+        % each other on the x-axis.
         placeholder = zeros(size(altitude), 'like', altitude) + (counter*offset);
-        plot(placeholder, altitude/1000, 'k');
+        plot(placeholder, altitude/1000, 'k'); % plot altitude in km.
         hold on;
         magnitudes = data.axial_ratio;
+        % The magnitudes of the red lines are the axial ratios of the
+        % gravity waves - axial ratio = intrinsic frequency / coriolis
+        % frequency.
+        % The for loop below just plots the red lines in the direction of
+        % propagation of the gravity wave
         for q=1:size(data.alt_of_detection_km)
             x1 = counter*offset;
             x2 = counter*offset + magnitudes(q)*cosd(angle(q));
