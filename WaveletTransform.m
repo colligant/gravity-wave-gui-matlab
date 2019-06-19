@@ -27,7 +27,7 @@ classdef WaveletTransform
             %UNTITLED3 Construct an instance of this class
             %   Detailed explanation goes here
             pad = 1; % Use padding to help with edge effects.
-            dj = 0.01; % Value of dj determines scale resolution of the transform.
+            dj = 0.125/8; % Value of dj determines scale resolution of the transform.
             s0 = 2*dt; % Minimum resolvable scale. dt is just the sampling rate -
             % either in time or space.
             obj.u_wind_component = u_wind_component;
