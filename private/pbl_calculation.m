@@ -83,9 +83,12 @@ if ch1_pt
     sh_line1 = yline(ax_1, PBLsh,'b','DisplayName','Specific Hu Method');
     hold(ax_1, 'off')
     title(ax_1, 'Vertical Gradient of Potential Temperature')
+    xlabel(ax_1,'Potential Temp (K) per Meter')
+    ylabel(ax_1,'Height (m)')
     legend(ax_1,[pt_line1,ri_line1,sh_line1])
     axis(ax_1, [-0.1,0.1,0,4000])
-    
+else
+    cla(ax_1)
 end
 
 % if y, this plots Height vs Richardson number with PBLHs
@@ -103,9 +106,12 @@ if ch2_ri
     xline(ax_2, 0.25, 'DisplayName','Ri(z)=0.25');
     hold(ax_2, 'off')
     title(ax_2, 'Height vs Richardson Number')
+    xlabel(ax_2,'Richardson Number')
+    ylabel(ax_2, 'Height (m)')
     legend(ax_2, [pt_line2,ri_line2,sh_line2])
     axis(ax_2, [-3,3,0,4000])
-    
+else
+    cla(ax_2)
 end
 
 % if y, this plots vertical gradient of specific humidity with PBLHs
@@ -122,8 +128,12 @@ if ch3_sh
     pt_line3 = yline(ax_3, PBLpt, 'g', 'DisplayName','\theta Method');
     hold(ax_3, 'off')
     title(ax_3, 'Vertical Gradient of Specific Humidity')
+    xlabel(ax_3,'Specific Humidity per Meter')
+    ylabel(ax_3,'Height (m)')
     legend(ax_3,[pt_line3,ri_line3,sh_line3])
     axis(ax_3, [-0.000035,0.000035,0,4000])
+else
+    cla(ax_3)
 end 
 
 % Plots height vs. potential temp and temp in Kelvin with PBLHs
@@ -140,6 +150,8 @@ ri_line4 = yline(ax_4, PBLri,'r','DisplayName','Ri Method');
 sh_line4 = yline(ax_4, PBLsh,'b','DisplayName','Specific Hu Method');
 hold(ax_4, 'off')
 title(ax_4, 'Potential Temperature & Temperature (K)')
+xlabel(ax_4,'Potential Temperature & Temperature (K)')
+ylabel(ax_4, 'Height (m)')
 legend(ax_4, [pt_line4,ri_line4,sh_line4])
 axis(ax_4, [280,320,0,4000])
 
