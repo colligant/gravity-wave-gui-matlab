@@ -30,16 +30,20 @@ function plotGravityWaveData(data, altitudeArray, ...
     set(axes1, 'YTickMode', 'auto', 'YTickLabelMode', 'auto');
     %set(app.UIAxes_2, 'XTickMode', 'auto', 'XTickLabelMode', 'auto');
     set(axes2, 'YTickMode', 'auto', 'YTickLabelMode', 'auto'); 
-    contourf(axes1, clippedAlt, waveletTransform.fourierWavelength, waveletTransform.powerSurface);
-    hold(axes1, 'on');
-    plot(axes1, clippedAlt, waveletTransform.coi, 'k');
-    if ~isempty(data)
+    if ~isempty(waveletTransform)
+        contourf(axes1, clippedAlt, waveletTransform.fourierWavelength, waveletTransform.powerSurface);
+        hold(axes1, 'on');
+        plot(axes1, clippedAlt, waveletTransform.coi, 'k');
+    end
+    if ~isempty(data) && ~isempty(gWaveLocations)
         s = scatter(axes1, clippedAlt(gWaveLocations(:, 1)), waveletTransform.fourierWavelength(gWaveLocations(:, 2)), 'ro');
         legend(axes1, s, 'gravity wave');
     end
-    ylim(axes1, [waveletTransform.s0 Inf]);
-    ylabel(axes1, 'Wavelength (m)');
-    xlabel(axes1, 'Altitude (m)');
+    if ~isempty(waveletTransform)
+        ylim(axes1, [waveletTransform.s0 Inf]);
+        ylabel(axes1, 'Wavelength (m)');
+        xlabel(axes1, 'Altitude (m)');
+    end
 
 end
 

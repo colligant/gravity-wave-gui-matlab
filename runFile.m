@@ -6,9 +6,9 @@ addpath('wave_matlab/');
 % dataDirectory = 'eclipseData/';
 dataDirectory = '/Users/thomascolligan/Practice_Flight_Data/';
 saveDirectory = 'gravityWaveData/';
-showPowerSurfaces = true; % Do you want to show the wavelet transform power surfaces?
+showPowerSurfaces = false; % Do you want to show the wavelet transform power surfaces?
 save = false; % Do you want to save the data? It will save in saveDirectory.
-lowerCutOffAltitude = 12000; % Altitude where you want to start analysis
+lowerCutOffAltitude = 0; % Altitude where you want to start analysis
 upperCutOffAltitude = 40000; % Altitude where you want to end analysis - 
 % a value of 40000 will go to the highest point in the profile.
 latitude = 46; % Latitude of launch location.
