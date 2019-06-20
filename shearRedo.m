@@ -1,4 +1,4 @@
-function [HL] = shear(fullfilename,ax_1)
+function [HLS] = shear(fullfilename,ax_1)
 
 %This code requires readSondFile.m to be in the current working directory
 %
@@ -31,8 +31,10 @@ height = alt(1:maxaidx)-alt(1);
 %find local max 
 LMX = islocalmax(ws);
 LMN = islocalmin(ws);
+
 %initialize logical array
-levels = false(length(ws),1);
+levelsX = false(length(ws),1);
+levelsY = false(length(ws),1);
 
 for k = 1:length(ws) 
     if LMX(k) == 1 %each local max is assessed
@@ -41,33 +43,53 @@ for k = 1:length(ws)
             if length(height)>stpidx % avoid looking at maximums that are within 1000 meters of burst height
                 wl = min(ws(k:stpidx)); % find minumum wind speed between local max height and 1000 m above
                 if ws(k)-wl >= 7.5 %difference must me greater than 7.5 to be considered significant shear
-                    levels(k) = true; %set logical value to true at the height index
+                    levelsX(k) = true; %set logical value to true at the height index
                 end
             end
         end
     end
 end
 
-HL = height(levels); % use logical array to determine heights of significant wind shear
+
+for j = 1:length(ws)
+    if LMN(j) == 1 %each local max is assessed
+        stpidxY = find(height >= height(j)+1000,1); %find index of height 1000 meters above local max height
+        if ~isempty(stpidxY) % stpidx will be an empty array when height of local max + 1000 m is larger than burst height
+            if length(height)>stpidxY % avoid looking at maximums that are within 1000 meters of burst height
+                wg = max(ws(j:stpidxY)); % find minumum wind speed between local max height and 1000 m above
+                if wg-ws(j) >= 7.5 %difference must me greater than 7.5 to be considered significant shear
+                    levelsY(j) = true; %set logical value to true at the height index
+                end
+            end
+        end
+    end
+end
+
+
+HLX = height(levelsX); % use logical array to determine heights of significant wind shear
+HLY = height(levelsY);
+
+HLS = sort([HLX;HLY]);
 
 if isempty(ax_1) % Allows this code to be used without the GUI, do not get rid of
     f1 = figure(); 
     ax_1 = axes(f1);
-end
-% Clears plot after loading a new file in the GUI
-plot(ax_1, ws, height, 'DisplayName', 'wind speed')
+end 
+plot(ax_1, ws, height,'DisplayName','Wind Speed')
 hold(ax_1, 'on');
-plot(ax_1, ws(LMX), height(LMX),'r*', 'DisplayName', 'local max')
-plot(ax_1, ws(LMN), height(LMN),'b*', 'DisplayName', 'local min');
-
-for i = 1:length(HL)
-    yline(ax_1, HL(i), 'DisplayName', num2str(HL(i))); %Plot all of the significant shear levels
+plot(ax_1, ws(LMX), height(LMX),'r*', 'DisplayName', 'Local Maximums')
+plot(ax_1, ws(LMN), height(LMN),'b*', 'DisplayName', 'Local Minimums');
+for i = 1:length(HLX)
+    yline(ax_1, HLX(i), 'DisplayName', num2str(HLX(i)));
 end
-
-hold(ax_1, 'off');
+for i = 1:length(HLY)
+    yline(ax_1,HLY(i),'b', 'DisplayName', num2str(HLY(i)));
+end
 title(ax_1,'Height (m) vs Wind Speed (m/s)')
 ylabel(ax_1,'Height (m)')
 xlabel(ax_1, 'Wind Speed (m/s)')
 legend(ax_1);
+
+
 end
     
