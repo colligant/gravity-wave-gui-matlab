@@ -44,7 +44,7 @@ for i=1:size(files)
     
     try
         % All analysis logic is in doAnalysis
-        [latitudeArray, longitudeArray, altitude, data, ~, ~, ~] = doAnalysis(current, save, saveDirectory, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude);
+        [latitudeArray, longitudeArray, altitude, data, ~, ~, ~, ~] = doAnalysis(current, save, saveDirectory, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude);
         % the rest of the code here is plotting and error checking.
         if isempty(data)
             continue;

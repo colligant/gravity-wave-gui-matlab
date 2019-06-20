@@ -20,6 +20,7 @@ classdef WaveletTransform
         fourierWavelength;
         tempWavelet;
         coi;
+        alt;
     end
     
     methods

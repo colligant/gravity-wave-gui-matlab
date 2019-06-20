@@ -1,4 +1,4 @@
-function [latitudeArray, longitudeArray, altNonFiltered, dataBlock, waveletTransform, clippedAlt, gWaveLocations] = doAnalysis(f, save, saveDir, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude, latitude)
+function [latitudeArray, longitudeArray, altNonFiltered, dataBlock, waveletTransform, clippedAlt, gWaveLocations, windSpeed] = doAnalysis(f, save, saveDir, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude, latitude)
 % does g-wave analysis for a radiosonde sounding.
 if nargin < 7
     latitude = 42.2127;
@@ -68,6 +68,7 @@ end
 % Prepare data
 ws = data.Ws(lai:mai);
 ws = ws(~isnan(ws));
+windSpeed = ws;
 wd = data.Wd(lai:mai);
 wd = wd(~isnan(wd));
 pressure = data.P(lai:mai);
@@ -189,7 +190,8 @@ for i=1:size(rows)
          % theta = 0 when wave packet does not pass filtering criteria.
         continue;
      end
-     theta = azimuthFromUnitCircle(rad2deg(theta));
+     % theta = azimuthFromUnitCircle(rad2deg(theta));
+     theta = rad2deg(theta);
      % all equations below from Murphy et al, 2014:
      % "Radiosonde observations of gravity waves in the lower stratosphere
      %   over Davis, Antartica", table 2.
@@ -221,7 +223,7 @@ for i=1:size(rows)
      [~, detectionIndex] = min(abs(altNonFiltered - altitudeOfDetection));
      latitudeOfDetection = latitudeArray(detectionIndex);
      longitudeOfDetection = longitudeArray(detectionIndex);
-     data = [altitudeOfDetection/1000 latitudeOfDetection longitudeOfDetection lambda_z/1000 lambda_h/1000, theta, axialRatio, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed, degreeOfPolarization, Q];
+     data = [altitudeOfDetection/1000, latitudeOfDetection, longitudeOfDetection, lambda_z/1000, lambda_h/1000, theta, axialRatio, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed, degreeOfPolarization, Q];
      if first
          dataArray = data;
          gWaveLocations = [cols(i) rows(i)];
@@ -237,6 +239,7 @@ if save && ~isfile(saveFileName) && gWaveDetected
          % check if the file exists - if it doesn't, write a header to
          % the file to ease further analysis.
          % writecell([header; num2cell(data)], saveFileName);
+         % PROP DIR> azimunth from unti cirlc
          header = {'alt_of_detection_km' 'lat_of_detection' 'lon_of_detection' 'vert_wavelength_km' 'horiz_wavelength_km' 'propagation_dir' 'axial_ratio' 'int_vert_group_vel_ms' 'int_horiz_group_vel_ms' 'int_vert_phase_spd_ms' 'int_horiz_phase_spd_ms' 'degreeofpolarization' 'stokes_param_Q'};
          dataBlock = array2table(dataArray, 'VariableNames', header);
          writetable(dataBlock, saveFileName);

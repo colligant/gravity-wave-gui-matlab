@@ -20,7 +20,7 @@ function plotGravityWaveData(data, altitudeArray, ...
             x2 = offset + magnitude*cosd(angle);
             y1 = data.alt_of_detection_km(q);
             y2 = data.alt_of_detection_km(q) + magnitude*sind(angle);
-            plot(axes2, [x1 x2], [y1 y2], 'r');
+            plot(axes2, [x1 x2], [y1 y2], 'r', 'DisplayName', 'g-wave');
         end
     end
     xlim(axes2, [-5 5]);
