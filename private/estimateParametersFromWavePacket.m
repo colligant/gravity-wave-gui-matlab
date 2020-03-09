@@ -13,9 +13,6 @@ degreeOfPolarization = sqrt((P^2 + Q^2 + D^2)) / I;
 % perform filtering based on Stokes parameters and degree of polarization.
 % TODO test DOP threshold values and examine 'depolarization' in Murphy et
 % al
-if degreeOfPolarization > 1
-    fprintf("Degree of polarization > 1\n");
-end
 if abs(Q) < 0.05 || abs(P) < 0.05 || degreeOfPolarization < 0.5 || degreeOfPolarization > 1
     theta = 0;
     axialRatio = 0;
@@ -34,12 +31,14 @@ else
     % in the same direction, so we have to rotate the zonal wind component 
     % (u) to align with the wave's direction.
     rotationMatrix = [cos(theta) sin(theta); -sin(theta) cos(theta)];
-    uv = [u; v];
+    uv = [uWavePacket; vWavePacket];
     uvRotated = rotationMatrix * uv;
     % axialRatio = abs(mean(uv(1, :)) / mean(uv(2, :)));
-    uRotated = uvRotated(1, :);
-    gamma = mean(uRotated.*imag(tempWavePacket)); % Koushik et al, page 8.
-    if gamma < 0
+    uPar = uvRotated(1, :);
+    % vPerp = uvRotated(2, :);
+    gamma = mean(uPar.*conj(tempWavePacket)) ./ sqrt(mean(abs(uPar).^2).*mean(abs(tempWavePacket).^2));
+    phase = atan2(imag(gamma), real(gamma));
+    if phase <= 0
         theta = theta + pi;
     end
     if axialRatio < 1

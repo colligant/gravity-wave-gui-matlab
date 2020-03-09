@@ -1,8 +1,5 @@
-function [latitudeArray, longitudeArray, altNonFiltered, dataBlock, waveletTransform, clippedAlt, gWaveLocations, windSpeed] = doAnalysis(f, save, saveDir, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude, latitude)
+function [latitudeArray, longitudeArray, altNonFiltered, dataBlock, waveletTransform, clippedAlt, gWaveLocations, windSpeed] = doAnalysis(f, save, saveDir, showPowerSurfaces, lowerCutOffAltitude, upperCutOffAltitude, latitude, heightSamplingFrequency, printData)
 % does g-wave analysis for a radiosonde sounding.
-if nargin < 7
-    latitude = 42.2127;
-end
 if nargin < 6
     upperCutOffAltitude = 40000; % flights never reach 40km.
 end
@@ -35,6 +32,7 @@ data = readRadioSondeData(f);
 [~, mai] = min(abs(data.Alt(lai:mai) - upperCutOffAltitude));
 mai = mai + lai;
 if maxAlt < lowerCutOffAltitude && upperCutOffAltitude == 40000
+    % filter data to altitude bounds
     fprintf("Flight %s did not reach %d m\n", f, lowerCutOffAltitude);
     latitudeArray = []; 
     longitudeArray = [];
@@ -43,6 +41,7 @@ if maxAlt < lowerCutOffAltitude && upperCutOffAltitude == 40000
     waveletTransform = [];
     clippedAlt = [];
     gWaveLocations = [];
+    windSpeed = [];
     return
 elseif upperCutOffAltitude ~= 40000 && data.Alt(mai) < (upperCutOffAltitude)
     fprintf("Flight %s did not reach %d m\n", f, upperCutOffAltitude);
@@ -53,6 +52,7 @@ elseif upperCutOffAltitude ~= 40000 && data.Alt(mai) < (upperCutOffAltitude)
     waveletTransform = [];
     clippedAlt = [];
     gWaveLocations = [];
+    windSpeed = [];
     return
 elseif mai == lai + 1
     latitudeArray = []; 
@@ -62,58 +62,40 @@ elseif mai == lai + 1
     waveletTransform = [];
     clippedAlt = [];
     gWaveLocations = [];
+    windSpeed = [];
     return
 end
-
+mai = mai - 1;
 % Prepare data
-ws = data.Ws(lai:mai);
-ws = ws(~isnan(ws));
-windSpeed = ws;
-wd = data.Wd(lai:mai);
-wd = wd(~isnan(wd));
-pressure = data.P(lai:mai);
-pressure = pressure(~isnan(pressure));
-alt = data.Alt(lai:mai);
-alt = alt(~isnan(alt));
-temp = data.T(lai:mai) + 273.15;
-temp = temp(~isnan(temp));
-time = data.Time(lai:mai);
-time = time(~isnan(time));
-potentialTemperature = (1000.0^0.286)*temp./(pressure.^0.286); % from Jaxen
-u = ws.*cosd(wd);
-v = ws.*sind(wd);
-latitudeArray = data.Lat_(1:mai);
+latitudeArray = data.Lat_( 1:mai);
 longitudeArray = data.Long_(1:mai);
-altNonFiltered = data.Alt(1:mai);
-altNonFiltered = altNonFiltered(~isnan(altNonFiltered));
 latitudeArray = latitudeArray(~isnan(latitudeArray));
 longitudeArray = longitudeArray(~isnan(longitudeArray));
+altNonFiltered = data.Alt(1:mai);
+altNonFiltered = altNonFiltered(~isnan(altNonFiltered));
 
-% remove background winds with a cubic polynomial. 
-u = fitAndRemovePolynomial(time, u);
-v = fitAndRemovePolynomial(time, v);
-temp = fitAndRemovePolynomial(time, temp);
+data = data(lai:mai, :);
+data = rmmissing(data);
+ws = data.Ws;
+windSpeed = ws;
+wd = data.Wd;
+pressure = data.P;
+alt = data.Alt;
+temp = data.T;
+time = data.Time;
 
-% enforce uniform spatial sampling...
-heightSamplingFrequency = 50; % ... of 50 m.
-u = averageToAltitudeResolution(u, alt, heightSamplingFrequency);
-v = averageToAltitudeResolution(v, alt, heightSamplingFrequency);
-temp = averageToAltitudeResolution(temp, alt, heightSamplingFrequency);
-potentialTemperature = averageToAltitudeResolution(potentialTemperature, alt, heightSamplingFrequency);
-alt = averageToAltitudeResolution(alt, alt, heightSamplingFrequency);
+
+u = -ws .* sind(wd); % from MetPy
+v = -ws .* cosd(wd); %
+
+% heightSamplingFrequency = 5;
+fprintf("height sampling frequency %d\n", heightSamplingFrequency);
+[alt, u, v, temp, bvFreqSquared] = preprocessData(alt, u, v, temp, ...
+    pressure, time, heightSamplingFrequency);
 clippedAlt = alt;
+
 % calculate constant values to use in analysis
-bvFreqSquared = bruntVaisalaFrequency(potentialTemperature, heightSamplingFrequency); % returns the squared BV frequency.
-
-if size(bvFreqSquared(bvFreqSquared < 0))
-     altIndices = bvFreqSquared < 0;
-     alts = alt(altIndices);
-     g = sprintf("%d, ", alts);
-     fprintf("Convective instability at altitudes: %s\n" , g);    
-end
-
 coriolisFreq = coriolisFrequency(latitude);
-
 % finally, do the wavelet transform.
 wt = WaveletTransform(u, v, temp, heightSamplingFrequency);
 waveletTransform = wt;
@@ -123,14 +105,22 @@ waveletTransform = wt;
 if showPowerSurfaces
     f1 = figure;
     set(0, 'CurrentFigure', f1);
-    contourf(alt, wt.fourierWavelength, wt.powerSurface);
+    colormap parula;
+    imagesc(alt, wt.fourierWavelength, log10(wt.powerSurface));
     [~, titleName, ~] = fileparts(f);
-    set(gca,'YScale', 'log')
     titleString = sprintf("%s", titleName);
     title(titleString, 'Interpreter', 'none');
     hold on;
     plot(alt, wt.coi, 'k')
-    ylim([wt.s0 Inf])
+    legend('cone of influence');
+    %scatter(alt(cols), wt.fourierWavelength(rows), 'k*')
+    ylabel('vertical wavelength (m)', 'FontSize', 14);
+    xlabel('altitude (m)', 'FontSize', 14)
+    c = colorbar('FontSize', 14);
+    c.Label.String = 'log(power surface), (m^2/s^2)';
+    %c.Label.Interpreter = 'latex';
+    set(gca, 'YDir', 'normal');
+    set(gca, 'YScale', 'log');
 end
 gWaveDetected = false;
 first = true;
@@ -161,18 +151,12 @@ for i=1:size(rows)
          end
      end
      if nCandidatesInsideWindow > 1
-         % visualize power surface with surf()
-%          figure
-%          subplot(1, 2, 1)
-%          contourf(wt.powerSurface) 
-%          hold on
-%          p = polyshape(xCoordsOfWindow, yCoordsOfWindow);
-%          plot(p, 'FaceColor', 'red');
-%          subplot(1, 2, 2)
-%          surf(wt.powerSurface(s1:s2, a1:a2));
-%          uiwait();
+         % to reconstruct wavelets within the closed contour...
+         % get wavelet coefficients for all altitudes
+         % and sum over the rows.
          continue;
-     end
+     end 
+     
      wwt = WindowedWaveletTransform(s1, s2, a1, a2); % helper object to ease passing parameters in to invertWaveletTransform
      % invert the wavelet transform in the windowed transform to get a wave
      % packet.
@@ -180,22 +164,27 @@ for i=1:size(rows)
      % reconstruct temperature and wind perturbations associated with each
      % wave around the wave altitude ``z'' and to estimate the vertical
      % wavelength, lambda_z" - MAL2014.
-     [ui, vi, tempi, lambda_z] = wt.invertWindowedTransform(wwt);
+     [ui, vi, tempi, lambda_z, horizWindVariance] = wt.invertWindowedTransform(wwt);
      % ^ u reconstructed, v reconstructed, temp reconstructed, vertical
      % wavenumber.
      % estimateParametersFromWavePacket thresholds wave candidates based on
      % criteria laid out in Murphy et al, 2014.
+     [maxVal, ~] = max(horizWindVariance);
+     fwhm = find(horizWindVariance >= 0.5*maxVal);
+     ui = ui(fwhm);
+     vi = vi(fwhm);
+     tempi = tempi(fwhm);
      [~, ~, Q, theta, axialRatio, degreeOfPolarization] = estimateParametersFromWavePacket(ui, vi, tempi);
      if theta == 0
          % theta = 0 when wave packet does not pass filtering criteria.
         continue;
-     end
+     end     
      % theta = azimuthFromUnitCircle(rad2deg(theta));
      theta = rad2deg(theta);
      % all equations below from Murphy et al, 2014:
      % "Radiosonde observations of gravity waves in the lower stratosphere
      %   over Davis, Antartica", table 2.
-     intrinsicFreq = coriolisFreq*axialRatio; 
+     intrinsicFreq = coriolisFreq*axialRatio;
      bvMean = mean(bvFreqSquared(a1:a2)); % Get the mean squared Brunt-Vaisala frequency over the height range of the gravity wave packet
      if ~((sqrt(bvMean) > intrinsicFreq) && (intrinsicFreq > coriolisFreq))
          % if the intrinsic frequency is greater than the buoyancy
@@ -205,10 +194,11 @@ for i=1:size(rows)
      end
      if showPowerSurfaces
         set(0, 'CurrentFigure', f1);
-        scatter(alt(cols(i)), wt.fourierWavelength(rows(i)), 'ro');
+        %scatter(alt(cols(i)), wt.fourierWavelength(rows(i)), 'k*');
      end
      gWaveDetected = true;
-     m = 2*pi / lambda_z; % vertical wavelength (1 / meters)
+     %fprintf("m:%f\n", lambda_z);
+     m = 2*pi / lambda_z; % vertical wavenumber (1 / meters)
      k_h = sqrt(((coriolisFreq^2*m^2)/(bvMean))*(intrinsicFreq^2/coriolisFreq^2 - 1)); % horizontal wavenumber (1 / meters)
      intrinsicVerticalGroupVel = -(1 / (intrinsicFreq*m))*(intrinsicFreq^2 - coriolisFreq^2); % m/s
      zonalWaveNumber = k_h*sin(theta);% 1/m
@@ -232,8 +222,9 @@ for i=1:size(rows)
          dataArray = [dataArray; data];
          gWaveLocations = [gWaveLocations; cols(i) rows(i)];
      end
-     
-     fprintf("Alt: %f, L_z: %f, L_h: %f, Theta: %f, w/f: %f, period (hours): %f, Vert. group vel: %f, Horiz. group vel: %f, Vert. phase spd: %f, Horiz. phase spd: %f\n", altitudeOfDetection/1000, lambda_z/1000, lambda_h/1000, theta, axialRatio, (2*pi/intrinsicFreq)/3600, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed);
+     if printData 
+        fprintf("Alt: %f, L_z: %f, L_h: %f, Theta (compass): %f, w/f: %f, period (hours): %f, Vert. group vel: %f, Horiz. group vel: %f, Vert. phase spd: %f, Horiz. phase spd: %f\n", altitudeOfDetection/1000, lambda_z/1000, lambda_h/1000, azimuthFromUnitCircle(theta), axialRatio, (2*pi/intrinsicFreq)/3600, intrinsicVerticalGroupVel, intrinsicHorizGroupVel, intrinsicVerticalPhaseSpeed, intrinsicHorizPhaseSpeed);
+     end
 end
 if save && ~isfile(saveFileName) && gWaveDetected
          % check if the file exists - if it doesn't, write a header to

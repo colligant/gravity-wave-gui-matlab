@@ -1,21 +1,10 @@
-data_dir = '/Users/thomascolligan/Box/BOREALIS-2019/gravity-wave-analysis/matlab-code/gravityWaveData/';
-t = fullfile(data_dir, "*.csv");
-files = dir(t);
-first = true;
-for i=1:size(files)
-    current = files(i).name;
-    fprintf("Current file: %s\n", current);
-    current = fullfile(data_dir, current);
-    if contains(current, 'W6')
-        continue;
-    end
-    if first
-        data = readGravityWaveData(current); 
-        first = false;
-    else
-        data = [data; readGravityWaveData(current)];
-    end
-end
-ax = polarhistogram(data.propagation_dir, 10);
-set(gca,'ThetaZeroLocation','top',...
-        'ThetaDir','counterclockwise');
+d = '~/stokes-params/before_eclipse';
+all = readGravityWaveParameters(d);
+
+% theta is in unit circle angle here.
+% size(before)
+% size(after)
+% before = before(before.axial_ratio > 20, :);
+% before = removevars(before, {'int_vert_group_vel_ms', 'int_horiz_group_vel_ms', 'degreeofpolarization', 'lon_of_detection', 'lat_of_detection'});
+% after = removevars(after, {'int_vert_group_vel_ms', 'int_horiz_group_vel_ms', 'degreeofpolarization', 'lon_of_detection', 'lat_of_detection'});
+% after = after(after.axial_ratio > 20, :);

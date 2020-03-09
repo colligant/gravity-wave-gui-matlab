@@ -3,7 +3,7 @@ function [perturbationQuantity] = fitAndRemovePolynomial(time, data, order)
 %   Detailed explanation goes here
 %   look at varargin
 if nargin < 3
-    order = 3;
+    order = 2;
 end
 [p] = polyfit(time, data, order);
 meanFlow = polyval(p, time);

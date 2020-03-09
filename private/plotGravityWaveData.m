@@ -31,7 +31,7 @@ function plotGravityWaveData(data, altitudeArray, ...
     %set(app.UIAxes_2, 'XTickMode', 'auto', 'XTickLabelMode', 'auto');
     set(axes2, 'YTickMode', 'auto', 'YTickLabelMode', 'auto'); 
     if ~isempty(waveletTransform)
-        contourf(axes1, clippedAlt, waveletTransform.fourierWavelength, waveletTransform.powerSurface);
+        imagesc(axes1, clippedAlt, waveletTransform.fourierWavelength, log10(waveletTransform.powerSurface));
         hold(axes1, 'on');
         plot(axes1, clippedAlt, waveletTransform.coi, 'k');
     end

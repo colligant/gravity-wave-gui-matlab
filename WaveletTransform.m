@@ -21,6 +21,7 @@ classdef WaveletTransform
         tempWavelet;
         coi;
         alt;
+        sig95;
     end
     
     methods
@@ -37,13 +38,19 @@ classdef WaveletTransform
             obj.dj = dj;
             obj.dt = dt;
             [obj.uWavelet, ~, obj.waveletScales, ~] = wavelet(u_wind_component, dt, pad, dj, s0); % wave, period, scale, COI
+            lag1 = acf(u_wind_component', 1);
+            [sigU, ~] = wave_signif(u_wind_component, dt, obj.waveletScales, 0, lag1);
             [obj.vWavelet, ~, ~, obj.coi] = wavelet(v_wind_component, dt, pad, dj, s0); % coi is the same for all transforms of the same data.
+            lag1 = acf(v_wind_component', 1);
             [obj.tempWavelet, ~, ~, ~] = wavelet(temperature, dt, pad, dj, s0);
+            [sigV, ~] = wave_signif(v_wind_component, dt, obj.waveletScales, 0, lag1);
+            obj.sig95 = (sigU + sigV)'*(ones(1,size(u_wind_component, 2)));
             obj.powerSurface = abs(obj.uWavelet).^2 + abs(obj.vWavelet).^2;
+            obj.sig95 = obj.powerSurface ./ obj.sig95;
             obj.fourierWavelength = 1.03 * obj.waveletScales; % magic number from Torrence and Compo.
         end
         
-        function [u_wind_reconstructed, v_wind_reconstructed, tempReconstructed, meanVerticalWavelength] = invertWindowedTransform(obj, windowedWaveletTransform)
+        function [u_wind_reconstructed, v_wind_reconstructed, tempReconstructed, meanVerticalWavelength, windVariance] = invertWindowedTransform(obj, windowedWaveletTransform)
             % Reconstruct the wave packet at altitudes of interest and
             % scales of interest by adding up the wavelet coefficients at
             % the scales of interest. This is an implementation of equation
@@ -65,7 +72,8 @@ classdef WaveletTransform
             v_wind_reconstructed = constant_coef*sum(windowed_v_wavelet ./ sqrt(windowed_scales)', 1);
             meanVerticalWavelength = mean(obj.fourierWavelength(scale_index_1:scale_index_2)); % the dominant wavelength is taken
             % to be the mean of the wavelengths over the scale range of
-            % interest.
+            % interest. Same as in Murphy, 2014.
+            windVariance = abs(u_wind_reconstructed).^2 + abs(v_wind_reconstructed).^2;
         end
         
         function [uWindInverted, vWindInverted] = invertWaveletTransform(obj)
