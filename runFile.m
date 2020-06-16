@@ -15,7 +15,7 @@ save = false; % Do you want to save the data? It will save in saveDirectory.
 lowerCutOffAltitude = 12000; % Altitude where you want to start analysis
 upperCutOffAltitude = 40000; % Altitude where you want to end analysis - 
 % a value of 40000 will go to the highest point in the profile.
-latitude = 30.250; % Latitude of launch location.
+latitude = 45; % Latitude of launch location.
 heightSamplingFrequency = 5;
 printData = true;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
