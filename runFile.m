@@ -1,7 +1,7 @@
 warning('off', 'MATLAB:polyfit:RepeatedPointsOrRescale');
-addpath('wave_matlab/'); % for wavelet analysis
-addpath('dnsfnu/'); % for plot coordinates
-addpath('acf/'); % for autocorrelation function
+addpath('./wave_matlab/'); % for wavelet analysis
+addpath('./dnsfnu/'); % for plot coordinates
+addpath('./acf/'); % for autocorrelation function
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %                           User defined variables                       %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -10,7 +10,7 @@ saveDirectory = '~/stokes-params/before_eclipse';
 % The w/f happened with no correction to wind direction, a window of
 % 12km - 40km, and a heightSamplingFrequency of 5m.
 % heightSamplingFrequency of 7m makes a 90 w/f show up.
-showPowerSurfaces = false; % Do you want to show the wavelet transform power surfaces?
+showPowerSurfaces = true; % Do you want to show the wavelet transform power surfaces?
 save = false; % Do you want to save the data? It will save in saveDirectory.
 lowerCutOffAltitude = 12000; % Altitude where you want to start analysis
 upperCutOffAltitude = 40000; % Altitude where you want to end analysis - 

@@ -67,6 +67,7 @@ elseif mai == lai + 1
 end
 mai = mai - 1;
 % Prepare data
+
 latitudeArray = data.Lat_( 1:mai);
 longitudeArray = data.Long_(1:mai);
 latitudeArray = latitudeArray(~isnan(latitudeArray));
@@ -84,16 +85,14 @@ alt = data.Alt;
 temp = data.T;
 time = data.Time;
 
-
 u = -ws .* sind(wd); % from MetPy
-v = -ws .* cosd(wd); %
+v = -ws .* cosd(wd); % 
 
 % heightSamplingFrequency = 5;
 fprintf("height sampling frequency %d\n", heightSamplingFrequency);
 [alt, u, v, temp, bvFreqSquared] = preprocessData(alt, u, v, temp, ...
     pressure, time, heightSamplingFrequency);
 clippedAlt = alt;
-
 % calculate constant values to use in analysis
 coriolisFreq = coriolisFrequency(latitude);
 % finally, do the wavelet transform.
@@ -101,23 +100,65 @@ wt = WaveletTransform(u, v, temp, heightSamplingFrequency);
 waveletTransform = wt;
 % get local maxima that (could) correspond to gravity wave packets
 % "Peaks were identified as a function of scale and altitude" - MAL2014.
+
 [rows, cols] = find(imregionalmax(wt.powerSurface, 8)); % 8 for 8-connectivity
+
+subplot(1, 7, 1)
+plot(wt.u_wind_component, alt, 'k')
+%title("U wind component, eclipse launch 4", 'FontSize', 16)
+%xlabel("windspeed (m/s)", 'fontsize', 14)
+ylabel("altitude (m)", 'fontsize', 14)
+subplot(1, 7, 2)
+plot(abs(wt.uWavelet(100,:)), alt, 'k')
+%title("U wavelet transform, eclipse launch 4", 'FontSize', 16)
+%xlabel("wavelet power spectrum (m/s)", 'fontsize', 14)
+%ylabel("altitude (m)", 'fontsize', 14)
+subplot(1, 7, 3)
+plot(abs(wt.uWavelet(200,:)), alt, 'k')
+%title("U wavelet transform, eclipse launch 4", 'FontSize', 16)
+%xlabel("wavelet power spectrum (m/s)", 'fontsize', 14)
+%ylabel("altitude (m)", 'fontsize', 14)
+
+subplot(1, 7, 4)
+plot(abs(wt.uWavelet(300,:)), alt, 'k')
+%title("U wavelet transform, eclipse launch 4", 'FontSize', 16)
+%xlabel("wavelet power spectrum (m/s)", 'fontsize', 14)
+%ylabel("altitude (m)", 'fontsize', 14)
+
+subplot(1, 7, 5)
+plot(abs(wt.uWavelet(400,:)), alt, 'k')
+%title("U wavelet transform, eclipse launch 4", 'FontSize', 16)
+%xlabel("wavelet power spectrum (m/s)", 'fontsize', 14)
+%ylabel("altitude (m)", 'fontsize', 14)
+
+subplot(1, 7, 6)
+plot(abs(wt.uWavelet(500,:)), alt, 'k')
+%title("U wavelet transform, eclipse launch 4", 'FontSize', 16)
+%xlabel("wavelet power spectrum (m/s)", 'fontsize', 14)
+%ylabel("altitude (m)", 'fontsize', 14)
+
+subplot(1, 7, 7)
+plot(abs(wt.uWavelet(600,:)), alt, 'k')
+%title("U wavelet transform, eclipse launch 4", 'FontSize', 16)
+%xlabel("wavelet power spectrum (m/s)", 'fontsize', 14)
+%ylabel("altitude (m)", 'fontsize', 14)
+
 if showPowerSurfaces
     f1 = figure;
     set(0, 'CurrentFigure', f1);
     colormap parula;
-    imagesc(alt, wt.fourierWavelength, log10(wt.powerSurface));
+    imagesc(alt, wt.fourierWavelength, (wt.powerSurface));
     [~, titleName, ~] = fileparts(f);
     titleString = sprintf("%s", titleName);
     title(titleString, 'Interpreter', 'none');
     hold on;
-    plot(alt, wt.coi, 'k')
-    legend('cone of influence');
+    %plot(alt, wt.coi, 'k')
+    %legend('cone of influence');
     %scatter(alt(cols), wt.fourierWavelength(rows), 'k*')
     ylabel('vertical wavelength (m)', 'FontSize', 14);
     xlabel('altitude (m)', 'FontSize', 14)
     c = colorbar('FontSize', 14);
-    c.Label.String = 'log(power surface), (m^2/s^2)';
+    c.Label.String = 'power surface, (m^2/s^2)';
     %c.Label.Interpreter = 'latex';
     set(gca, 'YDir', 'normal');
     set(gca, 'YScale', 'log');

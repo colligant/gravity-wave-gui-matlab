@@ -42,6 +42,7 @@ for i=1:size(files)
         subplot(1, 3, 3);
         hold on;
         plot(u(lower), v(lower), 'ro','MarkerSize', 14);
+        % black is upper
         plot(u(upper), v(upper), 'ko', 'MarkerSize', 14);
         ellipse_save = 'Save hodograph data? Y/N [N]';
         str = input(ellipse_save, 's');

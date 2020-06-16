@@ -1,4 +1,5 @@
 d = '~/hodographs/';
+
 t = fullfile(d, "*.txt");
 files = dir(t); 
 axs = [];
@@ -60,7 +61,7 @@ for k=1:size(unique_flights, 2)
     str = sprintf("f: %s, ^{w}/{f}=%0.1f, t=%0.1f, m_z=%0.1f", ...
         files(i).name(1:3), wf, azimuthFromUnitCircle(rad2deg(p)),...
         lambda_z/1000);
-    title(str);
+    %title(str);
     fprintf("%s\n", str);
     set(0, 'CurrentFigure', series_figure);
     xlim([5, 155]);
