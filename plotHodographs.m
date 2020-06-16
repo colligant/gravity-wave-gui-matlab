@@ -4,8 +4,7 @@ t = fullfile(d, "*.txt");
 files = dir(t); 
 axs = [];
 series_figure = figure;
-hodo_fig = figure;
-offset = 10;
+hodo_fig = figure; offset = 10;
 arrow_offset = 1 / 15;
 counter = 1;
 already_seen = [];
@@ -53,11 +52,9 @@ for k=1:size(unique_flights, 2)
     % fprintf("m:%f, lz:%f, h:%f, kh:%f\n", m, lambda_z, intrinsicHorizPhaseSpeed, int2);
     dTdz = dT./dz;
     eta = mean(dTdz.*urot(1:end-1));
-    p = pi - p + pi; % pi -p for error in ellipse_fit, + pi for shifting.
     if eta < 0
         p = p - pi;
     end
-
     str = sprintf("f: %s, ^{w}/{f}=%0.1f, t=%0.1f, m_z=%0.1f", ...
         files(i).name(1:3), wf, azimuthFromUnitCircle(rad2deg(p)),...
         lambda_z/1000);
